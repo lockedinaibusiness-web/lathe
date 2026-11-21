@@ -1,0 +1,42 @@
+{
+  "name": "lathe",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lathe: autopilot video editing. The model edits the project, not the pixels.",
+  "type": "module",
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "pnpm -r --if-present run build",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "gen": "pnpm --filter @lathe/schemas run gen",
+    "gen:check": "pnpm --filter @lathe/schemas run gen:check",
+    "schemas:build": "pnpm gen",
+    "schemas:check": "pnpm gen:check",
+    "fixtures": "node fixtures/generate.mjs",
+    "fixtures:gen": "node fixtures/generate.mjs",
+    "db:migrate": "node --import tsx scripts/db-migrate.ts",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "make:dev": "pnpm dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@lathe/api": "workspace:*",
+    "@types/node": "^24.9.0",
+    "embedded-postgres": "17.5.0-beta.15",
+    "eslint": "^9.39.0",
+    "globals": "^16.4.0",
+    "prettier": "^3.6.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.0"
+  }
+}

@@ -1,0 +1,62 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  linux:
+    name: linux (lint, typecheck, tests, fixtures)
+    runs-on: ubuntu-latest
+    env:
+      LATHE_SIGNING_SECRET: ci-signing-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Generated artifacts are in sync
+        run: pnpm schemas:check
+      - name: Generate fixtures
+        run: pnpm fixtures:gen
+      - name: Tests
+        run: pnpm test
+
+  windows:
+    name: windows (typecheck, tests incl. TTS fixtures)
+    runs-on: windows-latest
+    env:
+      LATHE_SIGNING_SECRET: ci-signing-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install ffmpeg
+        shell: pwsh
+        run: choco install ffmpeg -y --no-progress
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Generate fixtures
+        run: pnpm fixtures:gen
+      - name: Tests
+        run: pnpm test
