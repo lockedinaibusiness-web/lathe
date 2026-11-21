@@ -1,0 +1,22 @@
+{
+  "name": "@lathe/bench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Benchmark harness, fixtures, model-matrix runner. Scaffold in M0; agent harness in M6, matrix in M9.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@lathe/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

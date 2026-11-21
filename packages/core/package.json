@@ -1,0 +1,23 @@
+{
+  "name": "@lathe/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Timeline model, operations, validation, undo/redo. Pure TypeScript, zero I/O. Implemented in M1 (tests+scripts land with the code).",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@lathe/schemas": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.0",
+    "fast-check": "^4.3.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
