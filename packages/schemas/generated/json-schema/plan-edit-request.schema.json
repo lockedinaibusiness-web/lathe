@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/plan-edit-request",
+  "title": "PlanEditRequest",
+  "description": "Planning template request.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "goal": {
+      "type": "string",
+      "enum": [
+        "cleanup",
+        "tighten",
+        "tutorial_polish",
+        "short_form_clip",
+        "highlight_reel",
+        "custom"
+      ]
+    },
+    "style_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "sty-prefixed stable ID, e.g. \"sty_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "instruction": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "target_length_s": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "clips": {
+      "description": "For clip extraction goals",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50
+    }
+  },
+  "required": [
+    "project_id",
+    "goal"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/preview-request",
+  "title": "PreviewRequest",
+  "description": "Proxy preview request.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "prj-prefixed stable ID, e.g. \"prj_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "range": {
+      "type": "object",
+      "properties": {
+        "start_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "end_s": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "start_s",
+        "end_s"
+      ],
+      "additionalProperties": false
+    },
+    "max_wait_s": {
+      "default": 5,
+      "type": "number",
+      "minimum": 0,
+      "maximum": 60
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "description": "Invariant #4: safe to retry"
+    }
+  },
+  "required": [
+    "project_id",
+    "max_wait_s",
+    "idempotency_key"
+  ],
+  "additionalProperties": false
+}

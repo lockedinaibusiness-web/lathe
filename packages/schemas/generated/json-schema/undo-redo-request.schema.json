@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/undo-redo-request",
+  "title": "UndoRedoRequest",
+  "description": "Undo/redo request (group, batch, or last N).",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "prj-prefixed stable ID, e.g. \"prj_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128
+    },
+    "target": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "group"
+            },
+            "group_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "kind",
+            "group_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "batch"
+            },
+            "batch_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "btc-prefixed stable ID, e.g. \"btc_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "kind",
+            "batch_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "last"
+            },
+            "count": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          },
+          "required": [
+            "kind",
+            "count"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "expected_version": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    }
+  },
+  "required": [
+    "project_id",
+    "idempotency_key",
+    "target"
+  ],
+  "additionalProperties": false
+}

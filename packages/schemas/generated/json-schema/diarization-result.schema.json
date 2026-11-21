@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/diarization-result",
+  "title": "DiarizationResult",
+  "description": "Speaker turns result (with fallback flag).",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "speakers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^spk_[A-Za-z0-9]{10,64}$"
+          },
+          "total_speech_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "fallback": {
+            "type": "boolean",
+            "description": "true when labeled by the single-speaker fallback"
+          }
+        },
+        "required": [
+          "id",
+          "total_speech_s",
+          "fallback"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "turns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "speaker": {
+            "type": "string",
+            "pattern": "^spk_[A-Za-z0-9]{10,64}$"
+          },
+          "start_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "end_s": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "speaker",
+          "start_s",
+          "end_s"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "speakers",
+    "turns"
+  ],
+  "additionalProperties": false
+}

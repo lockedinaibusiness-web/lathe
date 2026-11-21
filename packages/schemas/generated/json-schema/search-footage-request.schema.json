@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/search-footage-request",
+  "title": "SearchFootageRequest",
+  "description": "Keyword/semantic search request.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "prj-prefixed stable ID, e.g. \"prj_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "query": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "mode": {
+      "default": "auto",
+      "type": "string",
+      "enum": [
+        "keyword",
+        "semantic",
+        "auto"
+      ]
+    },
+    "limit": {
+      "default": 10,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50
+    },
+    "range": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "segments"
+            },
+            "ids": {
+              "minItems": 1,
+              "maxItems": 500,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "ids"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "time"
+            },
+            "start_s": {
+              "type": "number",
+              "minimum": 0
+            },
+            "end_s": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "kind",
+            "start_s",
+            "end_s"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": [
+    "project_id",
+    "query",
+    "mode",
+    "limit"
+  ],
+  "additionalProperties": false
+}

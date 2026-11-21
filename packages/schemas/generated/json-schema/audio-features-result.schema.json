@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/audio-features-result",
+  "title": "AudioFeaturesResult",
+  "description": "Silences, loudness, music ranges, beats.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "silences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "e": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "s",
+          "e"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "loudness_curve": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "number",
+            "minimum": 0
+          },
+          "lufs": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "t",
+          "lufs"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "music_ranges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "e": {
+            "type": "number",
+            "minimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "music",
+              "speech",
+              "mixed",
+              "silence"
+            ]
+          }
+        },
+        "required": [
+          "s",
+          "e",
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "beats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "number",
+            "minimum": 0
+          },
+          "strength": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "t",
+          "strength"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "silences",
+    "loudness_curve",
+    "music_ranges"
+  ],
+  "additionalProperties": false
+}

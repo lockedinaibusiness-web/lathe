@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/get-frames-request",
+  "title": "GetFramesRequest",
+  "description": "Frame/contact-sheet request.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "prj-prefixed stable ID, e.g. \"prj_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "segment_ids": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+        "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+      }
+    },
+    "shot_ids": {
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+        "description": "sht-prefixed stable ID, e.g. \"sht_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+      }
+    },
+    "times_s": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0
+      }
+    },
+    "per_target": {
+      "default": 3,
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "width": {
+      "default": 320,
+      "type": "integer",
+      "minimum": 64,
+      "maximum": 1920
+    },
+    "contact_sheet": {
+      "default": false,
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "project_id",
+    "per_target",
+    "width",
+    "contact_sheet"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/create-project-request",
+  "title": "CreateProjectRequest",
+  "description": "Create a project.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "style_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "sty-prefixed stable ID, e.g. \"sty_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "source": {
+      "description": "Optionally attach a source asset (completed upload session or import URL).",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "upload_session_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "upl-prefixed stable ID, e.g. \"upl_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "upload_session_id"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "import_url": {
+              "type": "string",
+              "maxLength": 2048,
+              "format": "uri"
+            }
+          },
+          "required": [
+            "import_url"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "additionalProperties": false
+}

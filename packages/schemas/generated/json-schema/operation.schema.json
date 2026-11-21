@@ -1,0 +1,2814 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/operation",
+  "title": "Operation",
+  "description": "One invertible timeline operation (discriminated union).",
+  "x-lathe-contract-version": "1.0.0",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "split"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            },
+            "at": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "clip_id",
+            "at"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "new_clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            },
+            "snap_policy": {
+              "type": "object",
+              "properties": {
+                "avoid_mid_word": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "prefer_silence": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "tolerance_ms": {
+                  "default": 40,
+                  "type": "number",
+                  "minimum": 0
+                },
+                "pause_inset_ms": {
+                  "default": 40,
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "avoid_mid_word",
+                "prefer_silence",
+                "tolerance_ms",
+                "pause_inset_ms"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "trim"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "side": {
+              "type": "string",
+              "enum": [
+                "in",
+                "out",
+                "both"
+              ]
+            },
+            "in": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "out": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "ripple": {
+              "default": true,
+              "type": "boolean"
+            },
+            "snap_policy": {
+              "type": "object",
+              "properties": {
+                "avoid_mid_word": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "prefer_silence": {
+                  "default": true,
+                  "type": "boolean"
+                },
+                "tolerance_ms": {
+                  "default": 40,
+                  "type": "number",
+                  "minimum": 0
+                },
+                "pause_inset_ms": {
+                  "default": 40,
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "avoid_mid_word",
+                "prefer_silence",
+                "tolerance_ms",
+                "pause_inset_ms"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "side",
+            "ripple"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "delete"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "ripple": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "ripple"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "ripple_delete"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "ripple": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "ripple"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "reorder"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "to_index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "to_track_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "trk-prefixed stable ID, e.g. \"trk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "to_index"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "set_speed"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "speed": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 8
+            },
+            "preserve_pitch": {
+              "default": true,
+              "type": "boolean"
+            },
+            "ramp_in_s": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "ramp_out_s": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            }
+          },
+          "required": [
+            "speed",
+            "preserve_pitch"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "reframe"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "aspect": {
+              "type": "string",
+              "enum": [
+                "16:9",
+                "9:16",
+                "1:1",
+                "4:5",
+                "4:3",
+                "custom"
+              ]
+            },
+            "custom_w": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "custom_h": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "mode": {
+              "default": "subject",
+              "type": "string",
+              "enum": [
+                "subject",
+                "face",
+                "center",
+                "manual"
+              ]
+            },
+            "smoothing_s": {
+              "default": 0.5,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "offset_x": {
+              "type": "number",
+              "minimum": -1,
+              "maximum": 1
+            },
+            "offset_y": {
+              "type": "number",
+              "minimum": -1,
+              "maximum": 1
+            },
+            "zoom": {
+              "default": 1,
+              "type": "number",
+              "minimum": 1,
+              "maximum": 2
+            }
+          },
+          "required": [
+            "aspect",
+            "mode",
+            "smoothing_s",
+            "zoom"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "zoom"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "scale": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 2
+            },
+            "anchor": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "minimum": -1,
+                  "maximum": 1
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": -1,
+                  "maximum": 1
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            },
+            "from": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "to": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "ease": {
+              "default": "ease_in_out",
+              "type": "string",
+              "enum": [
+                "linear",
+                "ease_in",
+                "ease_out",
+                "ease_in_out"
+              ]
+            }
+          },
+          "required": [
+            "scale",
+            "ease"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "add_transition"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "crossfade",
+                "dip_to_black",
+                "dip_to_white",
+                "wipe",
+                "slide",
+                "hard_cut"
+              ]
+            },
+            "duration_s": {
+              "default": 0.5,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 5
+            }
+          },
+          "required": [
+            "kind",
+            "duration_s"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "add_caption"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000
+            },
+            "segment_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            },
+            "from": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "to": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "style_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "sty-prefixed stable ID, e.g. \"sty_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            },
+            "language": {
+              "type": "string",
+              "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+            },
+            "max_chars_per_line": {
+              "type": "integer",
+              "minimum": 8,
+              "maximum": 64
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "style_caption"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "caption_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "cap-prefixed stable ID, e.g. \"cap_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "caption_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "style_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "sty-prefixed stable ID, e.g. \"sty_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            },
+            "overrides": {
+              "type": "object",
+              "properties": {
+                "font_family": {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                "font_size_pct": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 20
+                },
+                "color": {
+                  "type": "string",
+                  "pattern": "^#[0-9a-fA-F]{6}$"
+                },
+                "background_opacity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "position": {
+                  "type": "string",
+                  "enum": [
+                    "top",
+                    "center",
+                    "bottom"
+                  ]
+                },
+                "highlight": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "word",
+                    "karaoke"
+                  ]
+                },
+                "max_lines": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 4
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "add_overlay"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "image",
+                "video",
+                "logo",
+                "lower_third",
+                "progress_bar",
+                "text"
+              ]
+            },
+            "asset_id": {
+              "type": "string",
+              "pattern": "^ast_[A-Za-z0-9]{10,64}$"
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "from": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "to": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "position": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": [
+                "x",
+                "y"
+              ],
+              "additionalProperties": false
+            },
+            "scale": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 2
+            },
+            "opacity": {
+              "default": 1,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "kind",
+            "from",
+            "to",
+            "opacity"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "set_gain"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "clip_id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                }
+              },
+              "required": [
+                "clip_id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "track_id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "trk-prefixed stable ID, e.g. \"trk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                }
+              },
+              "required": [
+                "track_id"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "gain_db": {
+              "type": "number",
+              "minimum": -60,
+              "maximum": 24
+            }
+          },
+          "required": [
+            "gain_db"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "duck_audio"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "clip_id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                }
+              },
+              "required": [
+                "clip_id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "track_id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "trk-prefixed stable ID, e.g. \"trk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                }
+              },
+              "required": [
+                "track_id"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "duck_db": {
+              "type": "number",
+              "minimum": -60,
+              "maximum": 0
+            },
+            "under": {
+              "default": "speech",
+              "type": "string",
+              "enum": [
+                "speech",
+                "music",
+                "all"
+              ]
+            },
+            "fade_s": {
+              "default": 0.3,
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "range": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "word"
+                        },
+                        "segment_id": {
+                          "type": "string",
+                          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                          "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                        },
+                        "word_index": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "edge": {
+                          "default": "start",
+                          "type": "string",
+                          "enum": [
+                            "start",
+                            "end"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "segment_id",
+                        "word_index",
+                        "edge"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "clip"
+                        },
+                        "clip_id": {
+                          "type": "string",
+                          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                          "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                        },
+                        "edge": {
+                          "type": "string",
+                          "enum": [
+                            "in",
+                            "out"
+                          ]
+                        },
+                        "offset_s": {
+                          "default": 0,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "clip_id",
+                        "edge",
+                        "offset_s"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "frame"
+                        },
+                        "frame": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "fps": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "frame"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "seconds"
+                        },
+                        "seconds": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "seconds"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "to": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "word"
+                        },
+                        "segment_id": {
+                          "type": "string",
+                          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                          "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                        },
+                        "word_index": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "edge": {
+                          "default": "start",
+                          "type": "string",
+                          "enum": [
+                            "start",
+                            "end"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "segment_id",
+                        "word_index",
+                        "edge"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "clip"
+                        },
+                        "clip_id": {
+                          "type": "string",
+                          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                          "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                        },
+                        "edge": {
+                          "type": "string",
+                          "enum": [
+                            "in",
+                            "out"
+                          ]
+                        },
+                        "offset_s": {
+                          "default": 0,
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "clip_id",
+                        "edge",
+                        "offset_s"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "frame"
+                        },
+                        "frame": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "fps": {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "frame"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "seconds"
+                        },
+                        "seconds": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "seconds"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "duck_db",
+            "under",
+            "fade_s"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "normalize_audio"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "scope": {
+                  "type": "string",
+                  "const": "project"
+                }
+              },
+              "required": [
+                "scope"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "clip_id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                }
+              },
+              "required": [
+                "clip_id"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "track_id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "trk-prefixed stable ID, e.g. \"trk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                }
+              },
+              "required": [
+                "track_id"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "target_lufs": {
+              "type": "number",
+              "minimum": -40,
+              "maximum": -5
+            },
+            "true_peak_dbtp": {
+              "type": "number",
+              "minimum": -6,
+              "maximum": -0.3
+            }
+          },
+          "required": [
+            "target_lufs",
+            "true_peak_dbtp"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "insert_broll"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            },
+            "at": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "word"
+                    },
+                    "segment_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "word_index": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "edge": {
+                      "default": "start",
+                      "type": "string",
+                      "enum": [
+                        "start",
+                        "end"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "segment_id",
+                    "word_index",
+                    "edge"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "clip"
+                    },
+                    "clip_id": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                      "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                    },
+                    "edge": {
+                      "type": "string",
+                      "enum": [
+                        "in",
+                        "out"
+                      ]
+                    },
+                    "offset_s": {
+                      "default": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "clip_id",
+                    "edge",
+                    "offset_s"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "frame"
+                    },
+                    "frame": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "fps": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "frame"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "seconds"
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "seconds"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "required": [
+            "clip_id",
+            "at"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "project_asset"
+                    },
+                    "asset_id": {
+                      "type": "string",
+                      "pattern": "^ast_[A-Za-z0-9]{10,64}$"
+                    },
+                    "in_s": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "out_s": {
+                      "type": "number",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "asset_id"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "project_search"
+                    },
+                    "query": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "limit": {
+                      "default": 5,
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 20
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "query",
+                    "limit"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "stock"
+                    },
+                    "provider": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    },
+                    "query": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "provider",
+                    "query"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "duration_s": {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 120
+            },
+            "audio": {
+              "default": "duck",
+              "type": "string",
+              "enum": [
+                "mute",
+                "keep",
+                "duck"
+              ]
+            }
+          },
+          "required": [
+            "source",
+            "duration_s",
+            "audio"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

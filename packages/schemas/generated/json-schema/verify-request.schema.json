@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/verify-request",
+  "title": "VerifyRequest",
+  "description": "Verification request.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "prj-prefixed stable ID, e.g. \"prj_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "render_job_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "job-prefixed stable ID, e.g. \"job_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "mid_word_cut",
+          "audio_click",
+          "clipping",
+          "loudness_off_target",
+          "true_peak_exceeded",
+          "caption_overflow",
+          "caption_too_fast",
+          "black_frames",
+          "av_drift",
+          "abrupt_level_jump",
+          "silence_over_budget",
+          "custom_check"
+        ]
+      }
+    },
+    "style_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "project_id"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/style-recipe",
+  "title": "StyleRecipe",
+  "description": "Edit style recipe (data, not code).",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "sty-prefixed stable ID, e.g. \"sty_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "targets": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "podcast",
+          "interview",
+          "talking_head",
+          "tutorial",
+          "screen",
+          "short_form",
+          "highlight_reel"
+        ]
+      }
+    },
+    "aspect": {
+      "default": "16:9",
+      "type": "string",
+      "enum": [
+        "16:9",
+        "9:16",
+        "1:1",
+        "4:5"
+      ]
+    },
+    "length": {
+      "type": "object",
+      "properties": {
+        "target_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "min_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "max_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "pacing": {
+      "type": "object",
+      "properties": {
+        "max_pause_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "target_pause_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "filler_words": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "filler_cluster_gap_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "remove_false_starts": {
+          "type": "boolean"
+        },
+        "repeated_takes": {
+          "type": "string",
+          "enum": [
+            "keep_last",
+            "keep_first",
+            "keep_all"
+          ]
+        },
+        "keep_breaths_min_s": {
+          "default": 0.12,
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "max_pause_s",
+        "target_pause_s",
+        "filler_words",
+        "filler_cluster_gap_ms",
+        "remove_false_starts",
+        "repeated_takes",
+        "keep_breaths_min_s"
+      ],
+      "additionalProperties": false
+    },
+    "captions": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "style_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "sty-prefixed stable ID, e.g. \"sty_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "max_lines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "max_chars_per_line": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 64
+        },
+        "max_cps": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "highlight": {
+          "default": "none",
+          "type": "string",
+          "enum": [
+            "none",
+            "word",
+            "karaoke"
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "max_lines",
+        "max_chars_per_line",
+        "max_cps",
+        "highlight"
+      ],
+      "additionalProperties": false
+    },
+    "zoom": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "min_scale": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "max_scale": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 2
+        },
+        "interval_min_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "interval_max_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "smoothing_s": {
+          "default": 0.4,
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "follow_activity": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled",
+        "min_scale",
+        "max_scale",
+        "interval_min_s",
+        "interval_max_s",
+        "smoothing_s",
+        "follow_activity"
+      ],
+      "additionalProperties": false
+    },
+    "audio": {
+      "type": "object",
+      "properties": {
+        "target_lufs": {
+          "type": "number",
+          "minimum": -40,
+          "maximum": -5
+        },
+        "true_peak_dbtp": {
+          "type": "number",
+          "minimum": -6,
+          "maximum": -0.3
+        },
+        "duck_music_db": {
+          "default": -12,
+          "type": "number",
+          "minimum": -60,
+          "maximum": 0
+        },
+        "denoise": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "target_lufs",
+        "true_peak_dbtp",
+        "duck_music_db",
+        "denoise"
+      ],
+      "additionalProperties": false
+    },
+    "speed": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "max_speed": {
+          "default": 2,
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "idle_threshold_s": {
+          "default": 1.5,
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "show_indicator": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled",
+        "max_speed",
+        "idle_threshold_s",
+        "show_indicator"
+      ],
+      "additionalProperties": false
+    },
+    "hooks": {
+      "type": "object",
+      "properties": {
+        "window_s": {
+          "default": 3,
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "keep_longest_hook": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "window_s",
+        "keep_longest_hook"
+      ],
+      "additionalProperties": false
+    },
+    "default_transition": {
+      "default": "hard_cut",
+      "type": "string",
+      "enum": [
+        "hard_cut",
+        "crossfade"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "description",
+    "targets",
+    "aspect",
+    "pacing",
+    "captions",
+    "audio",
+    "default_transition"
+  ],
+  "additionalProperties": false
+}

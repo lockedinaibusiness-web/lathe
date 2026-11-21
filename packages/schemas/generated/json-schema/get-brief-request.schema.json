@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/get-brief-request",
+  "title": "GetBriefRequest",
+  "description": "Brief request with detail level and range.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+      "description": "prj-prefixed stable ID, e.g. \"prj_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+    },
+    "detail": {
+      "default": "standard",
+      "type": "string",
+      "enum": [
+        "summary",
+        "standard",
+        "full"
+      ]
+    },
+    "range": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "segments"
+            },
+            "ids": {
+              "minItems": 1,
+              "maxItems": 500,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "ids"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "time"
+            },
+            "start_s": {
+              "type": "number",
+              "minimum": 0
+            },
+            "end_s": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "kind",
+            "start_s",
+            "end_s"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "speakers"
+            },
+            "ids": {
+              "minItems": 1,
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                "description": "spk-prefixed stable ID, e.g. \"spk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "ids"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "shots"
+            },
+            "ids": {
+              "minItems": 1,
+              "maxItems": 500,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                "description": "sht-prefixed stable ID, e.g. \"sht_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "ids"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "include_hints": {
+      "default": true,
+      "type": "boolean"
+    },
+    "include_words": {
+      "default": true,
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "project_id",
+    "detail",
+    "include_hints",
+    "include_words"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,251 @@
+{
+  "contracts": [
+    {
+      "file": "operation.schema.json",
+      "title": "Operation",
+      "sha256": "f5be84df7774f6d7",
+      "version": "1.0.0"
+    },
+    {
+      "file": "apply-edits-request.schema.json",
+      "title": "ApplyEditsRequest",
+      "sha256": "6b0966dddb34b618",
+      "version": "1.0.0"
+    },
+    {
+      "file": "apply-edits-response.schema.json",
+      "title": "ApplyEditsResponse",
+      "sha256": "a066616159931799",
+      "version": "1.0.0"
+    },
+    {
+      "file": "undo-redo-request.schema.json",
+      "title": "UndoRedoRequest",
+      "sha256": "194195f7abea5897",
+      "version": "1.0.0"
+    },
+    {
+      "file": "undo-redo-response.schema.json",
+      "title": "UndoRedoResponse",
+      "sha256": "7dccba81a7f4861c",
+      "version": "1.0.0"
+    },
+    {
+      "file": "brief.schema.json",
+      "title": "Brief",
+      "sha256": "115c9c23750e9cbb",
+      "version": "1.0.0"
+    },
+    {
+      "file": "get-brief-request.schema.json",
+      "title": "GetBriefRequest",
+      "sha256": "5613882c039c2a95",
+      "version": "1.0.0"
+    },
+    {
+      "file": "get-brief-response.schema.json",
+      "title": "GetBriefResponse",
+      "sha256": "d5e227e89fd6f393",
+      "version": "1.0.0"
+    },
+    {
+      "file": "get-frames-request.schema.json",
+      "title": "GetFramesRequest",
+      "sha256": "7c4d5dab809ffb0a",
+      "version": "1.0.0"
+    },
+    {
+      "file": "get-frames-response.schema.json",
+      "title": "GetFramesResponse",
+      "sha256": "f4b812c8b4acd592",
+      "version": "1.0.0"
+    },
+    {
+      "file": "search-footage-request.schema.json",
+      "title": "SearchFootageRequest",
+      "sha256": "0b4de88a38910634",
+      "version": "1.0.0"
+    },
+    {
+      "file": "search-footage-response.schema.json",
+      "title": "SearchFootageResponse",
+      "sha256": "67a213195c502455",
+      "version": "1.0.0"
+    },
+    {
+      "file": "finding.schema.json",
+      "title": "Finding",
+      "sha256": "633e614578c8eb91",
+      "version": "1.0.0"
+    },
+    {
+      "file": "verify-request.schema.json",
+      "title": "VerifyRequest",
+      "sha256": "515556c0ff1a7ab5",
+      "version": "1.0.0"
+    },
+    {
+      "file": "verify-response.schema.json",
+      "title": "VerifyResponse",
+      "sha256": "96c6f6b654c0aca5",
+      "version": "1.0.0"
+    },
+    {
+      "file": "verify-fix-loop.schema.json",
+      "title": "VerifyFixLoopRequest",
+      "sha256": "a24690e604939f00",
+      "version": "1.0.0"
+    },
+    {
+      "file": "job-envelope.schema.json",
+      "title": "JobEnvelope",
+      "sha256": "c6b1be287a4d02f7",
+      "version": "1.0.0"
+    },
+    {
+      "file": "job-result.schema.json",
+      "title": "JobResultMessage",
+      "sha256": "03fd5c6d7bb30205",
+      "version": "1.0.0"
+    },
+    {
+      "file": "job-status.schema.json",
+      "title": "JobStatus",
+      "sha256": "0ef54e06026cb0bc",
+      "version": "1.0.0"
+    },
+    {
+      "file": "transcript-result.schema.json",
+      "title": "TranscriptResult",
+      "sha256": "9ca6547692e9430b",
+      "version": "1.0.0"
+    },
+    {
+      "file": "diarization-result.schema.json",
+      "title": "DiarizationResult",
+      "sha256": "eddeccc7023c571c",
+      "version": "1.0.0"
+    },
+    {
+      "file": "shots-result.schema.json",
+      "title": "ShotsResult",
+      "sha256": "d0b8b05291e9c72f",
+      "version": "1.0.0"
+    },
+    {
+      "file": "audio-features-result.schema.json",
+      "title": "AudioFeaturesResult",
+      "sha256": "d5daa951cc9c6412",
+      "version": "1.0.0"
+    },
+    {
+      "file": "render-preset.schema.json",
+      "title": "RenderPreset",
+      "sha256": "140c18983d2e8f8c",
+      "version": "1.0.0"
+    },
+    {
+      "file": "render-request.schema.json",
+      "title": "RenderRequest",
+      "sha256": "bd8b03387ed8f7fb",
+      "version": "1.0.0"
+    },
+    {
+      "file": "render-response.schema.json",
+      "title": "RenderResponse",
+      "sha256": "c000f9a2ba64cc06",
+      "version": "1.0.0"
+    },
+    {
+      "file": "preview-request.schema.json",
+      "title": "PreviewRequest",
+      "sha256": "f8f960b975403532",
+      "version": "1.0.0"
+    },
+    {
+      "file": "preview-response.schema.json",
+      "title": "PreviewResponse",
+      "sha256": "c308ea3c9454a1fa",
+      "version": "1.0.0"
+    },
+    {
+      "file": "export-project-request.schema.json",
+      "title": "ExportProjectRequest",
+      "sha256": "ae359f3584a79356",
+      "version": "1.0.0"
+    },
+    {
+      "file": "export-project-response.schema.json",
+      "title": "ExportProjectResponse",
+      "sha256": "950731f0f24889fd",
+      "version": "1.0.0"
+    },
+    {
+      "file": "style-recipe.schema.json",
+      "title": "StyleRecipe",
+      "sha256": "de14227130ad377d",
+      "version": "1.0.0"
+    },
+    {
+      "file": "plan-edit-request.schema.json",
+      "title": "PlanEditRequest",
+      "sha256": "917e1bc325caf997",
+      "version": "1.0.0"
+    },
+    {
+      "file": "plan-edit-response.schema.json",
+      "title": "PlanEditResponse",
+      "sha256": "7a73064196a65e1a",
+      "version": "1.0.0"
+    },
+    {
+      "file": "list-styles-response.schema.json",
+      "title": "ListStylesResponse",
+      "sha256": "5f00638ec00273ae",
+      "version": "1.0.0"
+    },
+    {
+      "file": "verify-fix-loop-response.schema.json",
+      "title": "VerifyFixLoopResponse",
+      "sha256": "1c9cf43a0abf9bc4",
+      "version": "1.0.0"
+    },
+    {
+      "file": "get-status-response.schema.json",
+      "title": "GetStatusResponse",
+      "sha256": "f328f0adfce3bd48",
+      "version": "1.0.0"
+    },
+    {
+      "file": "project.schema.json",
+      "title": "Project",
+      "sha256": "bfdeab3b08b7fa9a",
+      "version": "1.0.0"
+    },
+    {
+      "file": "project-list.schema.json",
+      "title": "ProjectList",
+      "sha256": "7c51a80eea424468",
+      "version": "1.0.0"
+    },
+    {
+      "file": "create-project-request.schema.json",
+      "title": "CreateProjectRequest",
+      "sha256": "e7d16876567708d9",
+      "version": "1.0.0"
+    },
+    {
+      "file": "health-response.schema.json",
+      "title": "HealthResponse",
+      "sha256": "a5c1a6396bae1b11",
+      "version": "1.0.0"
+    },
+    {
+      "file": "readyz-response.schema.json",
+      "title": "ReadyzResponse",
+      "sha256": "37b00693da2eb662",
+      "version": "1.0.0"
+    }
+  ],
+  "version": "1.0.0"
+}

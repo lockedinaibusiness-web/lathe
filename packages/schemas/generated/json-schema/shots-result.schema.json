@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/shots-result",
+  "title": "ShotsResult",
+  "description": "Shot boundaries result.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "shots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^sht_[A-Za-z0-9]{10,64}$"
+          },
+          "start_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "end_s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "score": {
+            "description": "Detector strength",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "start_s",
+          "end_s"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "detector": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "shots",
+    "detector"
+  ],
+  "additionalProperties": false
+}

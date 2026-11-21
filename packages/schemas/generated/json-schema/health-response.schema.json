@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/health-response",
+  "title": "HealthResponse",
+  "description": "Health payload with contract version.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "const": "ok"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "version"
+  ],
+  "additionalProperties": false
+}

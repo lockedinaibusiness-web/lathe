@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/transcript-result",
+  "title": "TranscriptResult",
+  "description": "Word-level transcript result.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "language": {
+      "type": "string"
+    },
+    "duration_s": {
+      "type": "number",
+      "minimum": 0
+    },
+    "words": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "w": {
+            "type": "string"
+          },
+          "s": {
+            "type": "number",
+            "minimum": 0
+          },
+          "e": {
+            "type": "number",
+            "minimum": 0
+          },
+          "c": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "speaker_hint": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "w",
+          "s",
+          "e",
+          "c"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "engine": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "language",
+    "duration_s",
+    "words",
+    "engine"
+  ],
+  "additionalProperties": false
+}

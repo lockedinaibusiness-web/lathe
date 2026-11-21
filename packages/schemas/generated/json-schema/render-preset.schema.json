@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lathe.dev/schemas/render-preset",
+  "title": "RenderPreset",
+  "description": "Export preset shape.",
+  "x-lathe-contract-version": "1.0.0",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]{2,64}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "container": {
+      "type": "string",
+      "enum": [
+        "mp4",
+        "mov",
+        "webm",
+        "mkv",
+        "wav"
+      ]
+    },
+    "video_codec": {
+      "type": "string",
+      "enum": [
+        "h264",
+        "hevc",
+        "prores",
+        "av1",
+        "vp9"
+      ]
+    },
+    "audio_codec": {
+      "type": "string",
+      "enum": [
+        "aac",
+        "pcm_s16le",
+        "opus"
+      ]
+    },
+    "width": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "height": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "fps": {
+      "description": "null = match source",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "video_bitrate_kbps": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+    },
+    "crf": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 51
+    },
+    "profile": {
+      "type": "string",
+      "maxLength": 32
+    },
+    "audio_bitrate_kbps": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991
+    },
+    "burn_captions": {
+      "default": false,
+      "type": "boolean"
+    },
+    "normalize": {
+      "type": "object",
+      "properties": {
+        "target_lufs": {
+          "type": "number"
+        },
+        "true_peak_dbtp": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "target_lufs",
+        "true_peak_dbtp"
+      ],
+      "additionalProperties": false
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 300
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "container",
+    "video_codec",
+    "audio_codec",
+    "width",
+    "height",
+    "burn_captions",
+    "description"
+  ],
+  "additionalProperties": false
+}
