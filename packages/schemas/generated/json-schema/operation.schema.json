@@ -886,13 +886,18 @@
               "type": "number",
               "minimum": 1,
               "maximum": 2
+            },
+            "reset": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
             "aspect",
             "mode",
             "smoothing_s",
-            "zoom"
+            "zoom",
+            "reset"
           ],
           "additionalProperties": false
         }
@@ -1203,11 +1208,16 @@
                 "ease_out",
                 "ease_in_out"
               ]
+            },
+            "reset": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
             "scale",
-            "ease"
+            "ease",
+            "reset"
           ],
           "additionalProperties": false
         }
@@ -1270,7 +1280,8 @@
                 "dip_to_white",
                 "wipe",
                 "slide",
-                "hard_cut"
+                "hard_cut",
+                "none"
               ]
             },
             "duration_s": {
@@ -1578,6 +1589,18 @@
               "type": "string",
               "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
             },
+            "speaker": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "spk-prefixed stable ID, e.g. \"spk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            },
+            "overrides": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {}
+            },
             "max_chars_per_line": {
               "type": "integer",
               "minimum": 8,
@@ -1641,54 +1664,68 @@
           "type": "object",
           "properties": {
             "style_id": {
-              "type": "string",
-              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
-              "description": "sty-prefixed stable ID, e.g. \"sty_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "sty-prefixed stable ID, e.g. \"sty_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "overrides": {
-              "type": "object",
-              "properties": {
-                "font_family": {
-                  "type": "string",
-                  "maxLength": 64
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "font_family": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "font_size_pct": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 20
+                    },
+                    "color": {
+                      "type": "string",
+                      "pattern": "^#[0-9a-fA-F]{6}$"
+                    },
+                    "background_opacity": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "position": {
+                      "type": "string",
+                      "enum": [
+                        "top",
+                        "center",
+                        "bottom"
+                      ]
+                    },
+                    "highlight": {
+                      "type": "string",
+                      "enum": [
+                        "none",
+                        "word",
+                        "karaoke"
+                      ]
+                    },
+                    "max_lines": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 4
+                    }
+                  },
+                  "additionalProperties": false
                 },
-                "font_size_pct": {
-                  "type": "number",
-                  "minimum": 1,
-                  "maximum": 20
-                },
-                "color": {
-                  "type": "string",
-                  "pattern": "^#[0-9a-fA-F]{6}$"
-                },
-                "background_opacity": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 1
-                },
-                "position": {
-                  "type": "string",
-                  "enum": [
-                    "top",
-                    "center",
-                    "bottom"
-                  ]
-                },
-                "highlight": {
-                  "type": "string",
-                  "enum": [
-                    "none",
-                    "word",
-                    "karaoke"
-                  ]
-                },
-                "max_lines": {
-                  "type": "integer",
-                  "minimum": 1,
-                  "maximum": 4
+                {
+                  "type": "null"
                 }
-              },
-              "additionalProperties": false
+              ]
             }
           },
           "additionalProperties": false
@@ -2425,12 +2462,17 @@
                 "to"
               ],
               "additionalProperties": false
+            },
+            "clear": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
             "duck_db",
             "under",
-            "fade_s"
+            "fade_s",
+            "clear"
           ],
           "additionalProperties": false
         }
@@ -2525,11 +2567,16 @@
               "type": "number",
               "minimum": -6,
               "maximum": -0.3
+            },
+            "clear": {
+              "default": false,
+              "type": "boolean"
             }
           },
           "required": [
             "target_lufs",
-            "true_peak_dbtp"
+            "true_peak_dbtp",
+            "clear"
           ],
           "additionalProperties": false
         }
@@ -2797,6 +2844,379 @@
             "duration_s",
             "audio"
           ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "restore_clip"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "track_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "trk-prefixed stable ID, e.g. \"trk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "track_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "clip": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                },
+                "track_id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "trk-prefixed stable ID, e.g. \"trk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                },
+                "segment_id": {
+                  "type": "string",
+                  "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                  "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                },
+                "start_s": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "source_in_s": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "source_out_s": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "speed": {
+                  "default": 1,
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                },
+                "reframe": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "zoom": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "transition": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "audio": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "overlays": {
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                },
+                "broll_audio": {
+                  "type": "string",
+                  "enum": [
+                    "mute",
+                    "keep",
+                    "duck"
+                  ]
+                },
+                "is_broll": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "track_id",
+                "segment_id",
+                "start_s",
+                "source_in_s",
+                "source_out_s",
+                "speed",
+                "overlays"
+              ],
+              "additionalProperties": false
+            },
+            "captions": {
+              "default": [],
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                    "description": "cap-prefixed stable ID, e.g. \"cap_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                  },
+                  "track_id": {
+                    "type": "string",
+                    "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                    "description": "trk-prefixed stable ID, e.g. \"trk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                  },
+                  "clip_id": {
+                    "type": "string",
+                    "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                    "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                  },
+                  "start_s": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "end_s": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "style_id": {
+                    "type": "string",
+                    "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                    "description": "sty-prefixed stable ID, e.g. \"sty_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                  },
+                  "speaker": {
+                    "type": "string",
+                    "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+                    "description": "spk-prefixed stable ID, e.g. \"spk_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+                  },
+                  "language": {
+                    "type": "string",
+                    "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+                  },
+                  "overrides": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "track_id",
+                  "clip_id",
+                  "start_s",
+                  "end_s",
+                  "text"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "at_s": {
+              "type": "number",
+              "minimum": 0
+            },
+            "ripple": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "clip",
+            "captions",
+            "at_s",
+            "ripple"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "remove_caption"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "caption_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "cap-prefixed stable ID, e.g. \"cap_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "caption_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "group_id",
+        "rationale",
+        "type",
+        "target",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "op-prefixed stable ID, e.g. \"op_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "group_id": {
+          "type": "string",
+          "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+          "description": "grp-prefixed stable ID, e.g. \"grp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "One-line reason for this change, stored with the group and shown in review."
+        },
+        "type": {
+          "type": "string",
+          "const": "remove_overlay"
+        },
+        "target": {
+          "type": "object",
+          "properties": {
+            "clip_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "clp-prefixed stable ID, e.g. \"clp_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            },
+            "effect_id": {
+              "type": "string",
+              "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
+              "description": "efx-prefixed stable ID, e.g. \"efx_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
+            }
+          },
+          "required": [
+            "clip_id",
+            "effect_id"
+          ],
+          "additionalProperties": false
+        },
+        "params": {
+          "type": "object",
+          "properties": {},
           "additionalProperties": false
         }
       },

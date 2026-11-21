@@ -9,8 +9,8 @@ Do not edit by hand; run `pnpm gen`. Full machine-readable forms:
 
 | Contract | File | SHA-256 (16) |
 | --- | --- | --- |
-| Operation | operation.schema.json | f5be84df7774f6d7 |
-| ApplyEditsRequest | apply-edits-request.schema.json | 6b0966dddb34b618 |
+| Operation | operation.schema.json | c544ffbc65084daa |
+| ApplyEditsRequest | apply-edits-request.schema.json | 4882c7e3866fa7ae |
 | ApplyEditsResponse | apply-edits-response.schema.json | a066616159931799 |
 | UndoRedoRequest | undo-redo-request.schema.json | 194195f7abea5897 |
 | UndoRedoResponse | undo-redo-response.schema.json | 7dccba81a7f4861c |

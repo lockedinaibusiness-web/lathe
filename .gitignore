@@ -17,3 +17,5 @@ docs/generated/
 uv.lock
 .services/
 .data/
+# Windows Explorer copies of the tree ("<dir> - Copy") must never be tracked.
+* - Copy/

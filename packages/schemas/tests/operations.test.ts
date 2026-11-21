@@ -49,11 +49,19 @@ const SAMPLES: Record<string, OperationT> = {
   duck_audio: op("duck_audio", { clip_id: CLP }, { duck_db: -12 }),
   normalize_audio: op("normalize_audio", { scope: "project" }, { target_lufs: -16, true_peak_dbtp: -1 }),
   insert_broll: op("insert_broll", { clip_id: CLP, at: { kind: "seconds", seconds: 10 } }, { source: { kind: "project_asset", asset_id: AST }, duration_s: 4 }),
+  restore_clip: op("restore_clip", { track_id: TRK }, {
+    clip: { id: CLP, track_id: TRK, segment_id: SEG, start_s: 5, source_in_s: 0, source_out_s: 8 },
+    captions: [],
+    at_s: 5,
+    ripple: true,
+  }),
+  remove_caption: op("remove_caption", { caption_id: CAP }, {}),
+  remove_overlay: op("remove_overlay", { clip_id: CLP, effect_id: sampleId("efx", 2) }, {}),
 };
 
 describe("Operation union (EDT-2)", () => {
   it("accepts one valid sample of every operation type", () => {
-    expect(OPERATION_TYPES).toHaveLength(16);
+    expect(OPERATION_TYPES).toHaveLength(19);
     for (const type of OPERATION_TYPES) {
       const r = Operation.safeParse(SAMPLES[type]);
       if (!r.success) throw new Error(`${type} rejected: ${JSON.stringify(r.error.issues)}`);

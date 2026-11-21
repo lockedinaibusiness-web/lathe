@@ -15,10 +15,12 @@ import {
   BatchId,
   CaptionId,
   ClipId,
+  EffectId,
   GroupId,
   OperationId,
   ProjectId,
   SegmentId,
+  SpeakerId,
   StyleId,
   TrackId,
 } from "./ids.js";
@@ -148,6 +150,8 @@ const ReframeOp = z.object({
     offset_x: z.number().min(-1).max(1).optional(),
     offset_y: z.number().min(-1).max(1).optional(),
     zoom: z.number().min(1).max(2).default(1),
+    /** Engine inverse support (ADR-0013): clear reframing to null. */
+    reset: z.boolean().default(false),
   }),
 });
 
@@ -163,6 +167,8 @@ const ZoomOp = z.object({
     from: TimeSpec.optional(),
     to: TimeSpec.optional(),
     ease: z.enum(["linear", "ease_in", "ease_out", "ease_in_out"]).default("ease_in_out"),
+    /** Engine inverse support (ADR-0013): clear zoom to null. */
+    reset: z.boolean().default(false),
   }),
 });
 
@@ -173,6 +179,8 @@ const TransitionType = z.enum([
   "wipe",
   "slide",
   "hard_cut",
+  /** Engine inverse of add_transition when the clip had no transition. */
+  "none",
 ]);
 
 const AddTransitionOp = z.object({
@@ -202,6 +210,8 @@ const AddCaptionOp = z.object({
     to: TimeSpec.optional(),
     style_id: StyleId.optional(),
     language: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/).optional(),
+    speaker: SpeakerId.optional(),
+    overrides: z.record(z.string(), z.unknown()).optional(),
     max_chars_per_line: z.number().int().min(8).max(64).optional(),
   }),
 });
@@ -213,7 +223,8 @@ const StyleCaptionOp = z.object({
   type: z.literal("style_caption"),
   target: z.object({ caption_id: CaptionId }),
   params: z.object({
-    style_id: StyleId.optional(),
+    /** Provided (including explicit null to clear) => set; absent => unchanged. */
+    style_id: StyleId.nullable().optional(),
     overrides: z
       .object({
         font_family: z.string().max(64).optional(),
@@ -224,6 +235,7 @@ const StyleCaptionOp = z.object({
         highlight: z.enum(["none", "word", "karaoke"]).optional(),
         max_lines: z.number().int().min(1).max(4).optional(),
       })
+      .nullable()
       .optional(),
   }),
 });
@@ -267,6 +279,8 @@ const DuckAudioOp = z.object({
     under: z.enum(["speech", "music", "all"]).default("speech"),
     fade_s: z.number().min(0).max(2).default(0.3),
     range: z.object({ from: TimeSpec, to: TimeSpec }).optional(),
+    /** Engine inverse support (ADR-0013): clear ducking to null. */
+    clear: z.boolean().default(false),
   }),
 });
 
@@ -279,6 +293,8 @@ const NormalizeAudioOp = z.object({
   params: z.object({
     target_lufs: z.number().min(-40).max(-5),
     true_peak_dbtp: z.number().min(-6).max(-0.3),
+    /** Engine inverse support (ADR-0013): clear the normalization target. */
+    clear: z.boolean().default(false),
   }),
 });
 
@@ -315,6 +331,86 @@ const InsertBrollOp = z.object({
   }),
 });
 
+// ---------------------------------------------------------------------------
+// Engine inverse operations (ADR-0012)
+//
+// Invariant #2 requires every operation to be invertible. Twelve of the
+// sixteen public operations invert to public operations directly (trim back
+// with ripple, delete the split's new clip, restyle with prior values...).
+// Structural restores need vocabulary that is meaningless for a model to
+// issue by hand:
+//   - restore_clip: re-insert a deleted clip with its exact pre-image and
+//     captions (inverse of delete / ripple_delete).
+//   - remove_caption: drop a caption (inverse of add_caption).
+//   - remove_overlay: drop an overlay effect (inverse of add_overlay).
+// The core engine computes and emits these; the review UI shows them as
+// labeled undo groups. They remain fully validated operations.
+// ---------------------------------------------------------------------------
+
+const ClipPreImage = z.object({
+  id: ClipId,
+  track_id: TrackId,
+  segment_id: SegmentId,
+  start_s: z.number().nonnegative().finite(),
+  source_in_s: z.number().nonnegative().finite(),
+  source_out_s: z.number().nonnegative().finite(),
+  speed: z.number().positive().finite().default(1),
+  reframe: z.record(z.string(), z.unknown()).nullish(),
+  zoom: z.record(z.string(), z.unknown()).nullish(),
+  transition: z.record(z.string(), z.unknown()).nullish(),
+  audio: z.record(z.string(), z.unknown()).nullish(),
+  overlays: z.array(z.record(z.string(), z.unknown())).default([]),
+  broll_audio: z.enum(["mute", "keep", "duck"]).optional(),
+  is_broll: z.boolean().optional(),
+});
+
+const CaptionPreImage = z.object({
+  id: CaptionId,
+  track_id: TrackId,
+  clip_id: ClipId,
+  start_s: z.number().nonnegative().finite(),
+  end_s: z.number().nonnegative().finite(),
+  text: z.string().min(1).max(1000),
+  style_id: StyleId.optional(),
+  speaker: SpeakerId.optional(),
+  language: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/).optional(),
+  overrides: z.record(z.string(), z.unknown()).optional(),
+});
+
+const RestoreClipOp = z.object({
+  id: OperationId,
+  group_id: GroupId,
+  rationale,
+  type: z.literal("restore_clip"),
+  /** Where to restore: the track the clip lived on. */
+  target: z.object({ track_id: TrackId }),
+  params: z.object({
+    clip: ClipPreImage,
+    captions: z.array(CaptionPreImage).default([]),
+    /** Re-insert at the recorded position; ripple downstream when true. */
+    at_s: z.number().nonnegative().finite(),
+    ripple: z.boolean().default(true),
+  }),
+});
+
+const RemoveCaptionOp = z.object({
+  id: OperationId,
+  group_id: GroupId,
+  rationale,
+  type: z.literal("remove_caption"),
+  target: z.object({ caption_id: CaptionId }),
+  params: z.object({}),
+});
+
+const RemoveOverlayOp = z.object({
+  id: OperationId,
+  group_id: GroupId,
+  rationale,
+  type: z.literal("remove_overlay"),
+  target: z.object({ clip_id: ClipId, effect_id: EffectId }),
+  params: z.object({}),
+});
+
 export const Operation = z.discriminatedUnion("type", [
   SplitOp,
   TrimOp,
@@ -332,6 +428,9 @@ export const Operation = z.discriminatedUnion("type", [
   DuckAudioOp,
   NormalizeAudioOp,
   InsertBrollOp,
+  RestoreClipOp,
+  RemoveCaptionOp,
+  RemoveOverlayOp,
 ]);
 export type Operation = z.infer<typeof Operation>;
 export type OperationType = Operation["type"];
@@ -497,6 +596,31 @@ export const OPERATION_META: Record<OperationType, OperationMeta> = {
     affects_duration: false,
     affects_streams: "both",
   },
+  restore_clip: {
+    type: "restore_clip",
+    category: "arrange",
+    description:
+      "Engine inverse (ADR-0012): re-insert a deleted clip with its exact pre-image and captions.",
+    invertible: true,
+    affects_duration: true,
+    affects_streams: "none",
+  },
+  remove_caption: {
+    type: "remove_caption",
+    category: "caption",
+    description: "Engine inverse (ADR-0012): remove a caption by ID.",
+    invertible: true,
+    affects_duration: false,
+    affects_streams: "video",
+  },
+  remove_overlay: {
+    type: "remove_overlay",
+    category: "insert",
+    description: "Engine inverse (ADR-0012): remove an overlay effect from a clip.",
+    invertible: true,
+    affects_duration: false,
+    affects_streams: "video",
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -588,7 +712,7 @@ export const UndoRedoResponse = z.object({
 });
 export type UndoRedoResponse = z.infer<typeof UndoRedoResponse>;
 
-/** The operation types listed in EDT-2, exported for docs/tests. */
+/** The operation types listed in EDT-2 plus engine inverse ops (ADR-0012). */
 export const OPERATION_TYPES = [
   "split",
   "trim",
@@ -606,4 +730,7 @@ export const OPERATION_TYPES = [
   "duck_audio",
   "normalize_audio",
   "insert_broll",
+  "restore_clip",
+  "remove_caption",
+  "remove_overlay",
 ] as const satisfies readonly OperationType[];
