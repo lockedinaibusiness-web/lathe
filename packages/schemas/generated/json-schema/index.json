@@ -3,13 +3,13 @@
     {
       "file": "operation.schema.json",
       "title": "Operation",
-      "sha256": "c544ffbc65084daa",
+      "sha256": "d33ae1c63bb6dd19",
       "version": "1.0.0"
     },
     {
       "file": "apply-edits-request.schema.json",
       "title": "ApplyEditsRequest",
-      "sha256": "4882c7e3866fa7ae",
+      "sha256": "c29b17a9904a0256",
       "version": "1.0.0"
     },
     {

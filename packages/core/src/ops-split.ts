@@ -10,9 +10,10 @@ import {
   clipDuration,
   cloneTimeline,
   getTrack,
+  q,
 } from "./timeline.js";
-import { type ApplyContext, type OpResult, OpFailure, buildOp, mintId, needClip, snapTime, EXACT_POLICY } from "./ops-helpers.js";
-import { seconds } from "@lathe/schemas";
+import { type ApplyContext, type OpResult, OpFailure, buildOp, mintId, needClip, snapTime, clipPreImage, captionPreImage } from "./ops-helpers.js";
+import { captionsOf } from "./timeline.js";
 
 export function applySplit(t: Timeline, op: Operation & { type: "split" }, ctx: ApplyContext): OpResult {
   const clip = needClip(t, op.target.clip_id, op.id);
@@ -33,13 +34,12 @@ export function applySplit(t: Timeline, op: Operation & { type: "split" }, ctx: 
   const track = getTrack(t, clip.track_id);
   if (!track) throw new OpFailure("OP_TARGET_NOT_FOUND", `track ${clip.track_id} missing`, "target.clip_id", op.id);
 
-  const sourceAt = clip.source_in_s + rel * clip.speed;
-  const oldEnd = clip.start_s + dur;
+  const sourceAt = q(clip.source_in_s + q(rel * clip.speed));
   const newId = op.params.new_clip_id ?? mintId(ctx, "clp");
   const newClip: Clip = {
     ...structuredClone(clip),
     id: newId,
-    start_s: p,
+    start_s: q(p),
     source_in_s: sourceAt,
     source_out_s: clip.source_out_s,
     overlays: [],
@@ -66,10 +66,14 @@ export function applySplit(t: Timeline, op: Operation & { type: "split" }, ctx: 
     ),
     buildOp(
       {
-        type: "trim",
-        target: { clip_id: clip.id },
-        params: { side: "out", out: seconds(oldEnd), ripple: false, snap_policy: EXACT_POLICY },
-        rationale: `restore out point of ${clip.id}`,
+        type: "restore_clip",
+        target: { track_id: track.id },
+        params: {
+          clip: clipPreImage(clip),
+          captions: captionsOf(t, clip.id).map(captionPreImage),
+          at_s: clip.start_s,
+        },
+        rationale: `restore pre-image of ${clip.id}`,
       },
       ctx,
     ),

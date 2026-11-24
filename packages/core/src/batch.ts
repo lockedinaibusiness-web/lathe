@@ -24,6 +24,8 @@ export interface BatchOutcome {
   previous_version: number;
   new_version: number;
   applied: boolean;
+  /** The resulting timeline when applied (otherwise the unchanged input). */
+  timeline: Timeline;
   results: OperationOutcome[];
   conflicts: { code: string; op_ids: string[]; message: string; suggested_fix: string }[];
   summary: string;
@@ -62,6 +64,28 @@ export function applyBatch(req: ApplyBatchRequest, ctx: ApplyContext): BatchOutc
         },
       ],
       summary: `Rejected: ${operations.length} operations exceeds the ${MAX_BATCH_OPS}-op limit.`,
+      timeline,
+      inverse: [],
+      per_op_inverses: [],
+    };
+  }
+  if (operations.length === 0) {
+    return {
+      batch_id: batchId,
+      previous_version: timeline.version,
+      new_version: timeline.version,
+      applied: false,
+      timeline,
+      results: [],
+      conflicts: [
+        {
+          code: "OP_INVALID_PARAMS",
+          op_ids: [],
+          message: "batch must contain at least one operation",
+          suggested_fix: "Send 1-500 operations in apply_edits.",
+        },
+      ],
+      summary: "Rejected: empty batch.",
       inverse: [],
       per_op_inverses: [],
     };
@@ -72,6 +96,7 @@ export function applyBatch(req: ApplyBatchRequest, ctx: ApplyContext): BatchOutc
       previous_version: timeline.version,
       new_version: timeline.version,
       applied: false,
+      timeline,
       results: [],
       conflicts: [
         {
@@ -107,19 +132,19 @@ export function applyBatch(req: ApplyBatchRequest, ctx: ApplyContext): BatchOutc
         created: outcome.created,
       });
     } catch (err) {
-      if (err instanceof OpFailure) {
-        results.push({
-          op_id: (op as { id?: string }).id ?? "?",
-          ok: false,
-          error: { code: err.code, message: err.message, suggested_fix: err.suggested_fix, ...(err.field ? { field: err.field } : {}) },
-        });
-      } else {
-        results.push({
-          op_id: (op as { id?: string }).id ?? "?",
-          ok: false,
-          error: { code: "OP_INVALID_PARAMS", message: String(err), suggested_fix: "Check the operation shape against the schema." },
-        });
-      }
+      // applyOperation maps every validation failure to OpFailure; anything
+      // else is an engine bug and must surface, not be swallowed.
+      if (!(err instanceof OpFailure)) throw err;
+      results.push({
+        op_id: op.id,
+        ok: false,
+        error: {
+          code: err.code,
+          message: err.message,
+          suggested_fix: err.suggested_fix,
+          ...(err.field ? { field: err.field } : {}),
+        },
+      });
       // Atomic: stop and reject. No partial application (invariant #3).
       return {
         batch_id: batchId,
@@ -129,6 +154,7 @@ export function applyBatch(req: ApplyBatchRequest, ctx: ApplyContext): BatchOutc
         results,
         conflicts: [],
         summary: `Rejected at operation ${results.length} of ${operations.length}; nothing was applied.`,
+        timeline,
         inverse: [],
         per_op_inverses: [],
       };
@@ -141,6 +167,7 @@ export function applyBatch(req: ApplyBatchRequest, ctx: ApplyContext): BatchOutc
       previous_version: timeline.version,
       new_version: timeline.version,
       applied: false,
+      timeline: working,
       results,
       conflicts: [],
       summary: `Dry run: ${operations.length} operations validated; nothing was applied.`,
@@ -162,6 +189,7 @@ export function applyBatch(req: ApplyBatchRequest, ctx: ApplyContext): BatchOutc
     previous_version: timeline.version,
     new_version: finalTimeline.version,
     applied: true,
+    timeline: finalTimeline,
     results,
     conflicts: [],
     summary: `Applied ${operations.length} operations atomically; timeline v${timeline.version} -> v${finalTimeline.version}.`,

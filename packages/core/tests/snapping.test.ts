@@ -92,7 +92,7 @@ describe("snap policy (invariants #1, #6)", () => {
   it("exact policies (engine inverses) never move the point", () => {
     const exact = { avoid_mid_word: false, prefer_silence: false, tolerance_ms: 1e9, pause_inset_ms: 0 };
     const w = src().words[5]!;
-    const middle = (w.s + w.e) / 2;
+    const middle = Math.round(((w.s + w.e) / 2) * 1e6) / 1e6;
     const r = resolveAndSnap("op_X", seconds(middle), timeline, src(), exact);
     expect(r.applied_s).toBe(middle);
     expect(r.report.snapped_to).toBe("none");

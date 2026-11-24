@@ -19,6 +19,9 @@ export function applyDelete(t: Timeline, op: Operation & { type: "delete" | "rip
   const ripple = op.type === "ripple_delete" ? true : op.params.ripple;
   const dur = clipDuration(clip);
   const caps = captionsOf(t, clip.id);
+  // Record the exact order index so the restore re-inserts in the same slot
+  // even when neighbor clips changed (invariant #2 across op sequences).
+  const orderIndex = t.tracks.find((tr) => tr.id === clip.track_id)?.clip_ids.indexOf(clip.id) ?? 0;
 
   // Always work on a copy: rippleTrack clones, but ripple:false paths must not
   // mutate the caller's timeline.
@@ -37,6 +40,7 @@ export function applyDelete(t: Timeline, op: Operation & { type: "delete" | "rip
           clip: clipPreImage(clip),
           captions: caps.map(captionPreImage),
           at_s: clip.start_s,
+          order_index: orderIndex,
           ripple,
         },
         rationale: `restore deleted clip ${clip.id}`,

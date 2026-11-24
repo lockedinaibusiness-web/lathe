@@ -122,6 +122,19 @@ export interface Timeline {
 // Construction and basic queries
 // ---------------------------------------------------------------------------
 
+/**
+ * Quantize a time value to microsecond precision. Float drift (e.g.
+ * 7.999999999999999 for 8 after speed multiplication) must never enter
+ * stored state: inverses restore byte-identical values and renders stay
+ * deterministic (invariant #7).
+ */
+export function q(v: number): number {
+  // Symmetric rounding: q(-x) === -q(x), so an inverse arithmetic path
+  // subtracts exactly what the forward path added (invariant #2).
+  if (Math.abs(v) < 1e-9) return 0;
+  return Math.sign(v) * Math.round(Math.abs(v) * 1e6) / 1e6;
+}
+
 /** Timeline duration in seconds (longest clip end across tracks). */
 export function timelineDuration(t: Timeline): number {
   let max = 0;
@@ -146,7 +159,10 @@ export function clipEnd(c: Clip): number {
 }
 
 export function getTrack(t: Timeline, id: string): Track | undefined {
-  return t.tracks.find((tr) => tr.id === id);
+  const real = t.tracks.find((tr) => tr.id === id);
+  if (real) return real;
+  if (id === BROLL_TRACK_ID) return brollTrack(t);
+  return undefined;
 }
 
 export function getClip(t: Timeline, id: string): Clip | undefined {
@@ -171,11 +187,6 @@ export function trackClips(t: Timeline, trackId: string): Clip[] {
   return track.clip_ids.map((id) => t.clips[id]).filter((c): c is Clip => c !== undefined);
 }
 
-/** The B-roll track, created by the engine on first insert. */
-export function brollTrackName(kind: TrackKind): string {
-  return kind === "video" ? "B-roll" : "B-roll audio";
-}
-
 /**
  * Deterministic deep clone. Timeline values are plain JSON data, so this is
  * exact and cheap enough for batch simulation.
@@ -198,11 +209,22 @@ export function stableStringify(v: unknown): string {
   return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(",")}}`;
 }
 
-/** Immutable update helper for tracks/clips/captions maps. */
-export function withClip(t: Timeline, clip: Clip): Timeline {
-  const next = cloneTimeline(t);
-  next.clips[clip.id] = clip;
-  return next;
+/**
+ * The B-roll track is VIRTUAL: stored timelines carry only the three real
+ * tracks, and B-roll clips (is_broll: true) are projected onto a derived
+ * track. This keeps insert_broll/delete structurally invertible (no stored
+ * track appears or disappears) and the model canonical.
+ */
+export const BROLL_TRACK_ID = "trk_BROLLVIRTUAL00001";
+
+/** The derived B-roll track (empty when there is no B-roll). */
+export function brollTrack(t: Timeline): Track {
+  const ids = Object.values(t.clips)
+    .filter((c) => c.is_broll)
+    .sort((a, b) => a.start_s - b.start_s)
+    .map((c) => c.id);
+  const position = t.tracks.reduce((m, tr) => Math.max(m, tr.position), -1) + 1;
+  return { id: BROLL_TRACK_ID, kind: "video", name: "B-roll", position, audio: null, clip_ids: ids };
 }
 
 /** A fresh timeline with the standard three tracks. */
@@ -242,7 +264,7 @@ export function repackTrack(t: Timeline, trackId: string): { timeline: Timeline;
     const clip = next.clips[id]!;
     deltas[id] = cursor - clip.start_s;
     clip.start_s = cursor;
-    cursor += clipDuration(clip);
+    cursor = q(cursor + clipDuration(clip));
   }
   // Captions follow their clips.
   for (const capId of Object.keys(next.captions)) {
@@ -274,13 +296,14 @@ export function rippleTrack(
   for (const id of track.clip_ids) {
     if (id === excludeId) continue;
     const clip = next.clips[id]!;
-    if (clip.start_s < fromS - 1e-9) continue;
-    clip.start_s += delta;
+    // Skip clips more than one quantum (1 µs) before the ripple origin.
+    if (clip.start_s + 1e-6 < fromS) continue;
+    clip.start_s = q(clip.start_s + delta);
     for (const capId of Object.keys(next.captions)) {
       const cap = next.captions[capId]!;
       if (cap.clip_id === id) {
-        cap.start_s += delta;
-        cap.end_s += delta;
+        cap.start_s = q(cap.start_s + delta);
+        cap.end_s = q(cap.end_s + delta);
       }
     }
   }

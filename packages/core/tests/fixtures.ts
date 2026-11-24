@@ -26,7 +26,13 @@ export function testSource(durationS = 600): SourceIndex {
   // Words every 0.4 s from 1.0 s: [1.0,1.3], [1.4,1.7], ...
   const words = [];
   for (let t = 1.0; t + 0.3 < durationS; t += 0.4) {
-    words.push({ segment_id: "seg_TEST000001", word_index: words.length, s: t, e: t + 0.3 });
+    // Quantized like the engine stores times (microsecond precision).
+    words.push({
+      segment_id: "seg_TEST000001",
+      word_index: words.length,
+      s: Math.round(t * 1e6) / 1e6,
+      e: Math.round((t + 0.3) * 1e6) / 1e6,
+    });
   }
   return {
     duration_s: durationS,
@@ -79,8 +85,8 @@ export function sequenceTimeline(): { timeline: Timeline; trackId: string; clipI
   const clipIds: string[] = [];
   let cursor = 0;
   for (let i = 0; i < 3; i++) {
-    const id = `clp_SEQ${String(i + 1).padStart(6, "0")}`;
-    timeline.clips[id] = makeClip({ id, track_id: trackId, segment_id: `seg_SEQ${String(i + 1).padStart(6, "0")}`, start_s: cursor, source_in_s: 0, source_out_s: 10 });
+    const id = `clp_SEQ${String(i + 1).padStart(7, "0")}`;
+    timeline.clips[id] = makeClip({ id, track_id: trackId, segment_id: `seg_SEQ${String(i + 1).padStart(7, "0")}`, start_s: cursor, source_in_s: 0, source_out_s: 10 });
     videoTrack.clip_ids.push(id);
     clipIds.push(id);
     cursor += 10;

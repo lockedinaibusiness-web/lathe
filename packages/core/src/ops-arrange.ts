@@ -16,8 +16,10 @@ import {
   rippleTrack,
   repackTrack,
   cloneTimeline,
+  captionsOf,
+  q,
 } from "./timeline.js";
-import { type ApplyContext, type OpResult, OpFailure, buildOp, needClip, needTrack, EXACT_POLICY } from "./ops-helpers.js";
+import { type ApplyContext, type OpResult, OpFailure, buildOp, needClip, needTrack, EXACT_POLICY, clipPreImage, captionPreImage, realTrackClipIds } from "./ops-helpers.js";
 import { resolveAndSnap } from "./snap.js";
 
 export function applyReorder(t: Timeline, op: Operation & { type: "reorder" }, ctx: ApplyContext): OpResult {
@@ -37,7 +39,6 @@ export function applyReorder(t: Timeline, op: Operation & { type: "reorder" }, c
     throw new OpFailure("OP_INVALID_PARAMS", "track is locked", "target.clip_id", op.id);
   }
 
-  const originalIndex = fromTrack.clip_ids.indexOf(clip.id);
   const next = cloneTimeline(t);
   const src = next.tracks.find((tr) => tr.id === fromTrack.id)!;
   src.clip_ids = src.clip_ids.filter((id) => id !== clip.id);
@@ -49,44 +50,79 @@ export function applyReorder(t: Timeline, op: Operation & { type: "reorder" }, c
   movedClip.track_id = toTrackId;
 
   // Re-pack both tracks so positions stay gap-free and deterministic.
-  repackTrack(next, fromTrack.id);
-  repackTrack(next, toTrack.id);
+  // repackTrack returns a NEW timeline; the pack must be threaded through.
+  let packed = repackTrack(next, fromTrack.id).timeline;
+  if (toTrackId !== fromTrack.id) {
+    packed = repackTrack(packed, toTrack.id).timeline;
+  }
+  const finalTimeline = packed;
 
-  const inverse: Operation[] = [
-    buildOp(
-      {
-        type: "reorder",
-        target: { clip_id: clip.id },
-        params: { to_index: originalIndex, to_track_id: fromTrack.id },
-        rationale: `restore position of ${clip.id}`,
-      },
-      ctx,
-    ),
-  ];
+  // Inverse: restore the exact pre-images of every clip on both tracks.
+  // Positional inverses (reorder back, re-pack) cannot be byte-exact across
+  // irrational speeds; pre-image restoration is (ADR-0013).
+  const inverse: Operation[] = [];
+  for (const tr of [fromTrack.id, toTrackId]) {
+    const originalOrder = realTrackClipIds(t, tr);
+    originalOrder.forEach((id, orderIndex) => {
+      const c = t.clips[id]!;
+      inverse.push(
+        buildOp(
+          {
+            type: "restore_clip",
+            target: { track_id: tr },
+            params: {
+              clip: clipPreImage(c),
+              captions: captionsOf(t, c.id).map(captionPreImage),
+              at_s: c.start_s,
+              order_index: orderIndex,
+            },
+            rationale: `restore pre-image of ${c.id}`,
+          },
+          ctx,
+        ),
+      );
+    });
+  }
 
-  return { timeline: next, inverse, created: { clip_ids: [], caption_ids: [], effect_ids: [] }, snaps: [] };
+  return { timeline: finalTimeline, inverse, created: { clip_ids: [], caption_ids: [], effect_ids: [] }, snaps: [] };
 }
 
 export function applySetSpeed(t: Timeline, op: Operation & { type: "set_speed" }, ctx: ApplyContext): OpResult {
   const clip = needClip(t, op.target.clip_id, op.id);
   const oldSpeed = clip.speed;
-  const oldEnd = clipEnd(clip);
+  const oldEnd = q(clipEnd(clip));
   if (op.params.speed === oldSpeed) {
     return { timeline: t, inverse: [], created: { clip_ids: [], caption_ids: [], effect_ids: [] }, snaps: [] };
   }
   const next = cloneTimeline(t);
   const c = next.clips[clip.id]!;
   c.speed = op.params.speed;
-  const newEnd = clipEnd(c);
+  const newEnd = q(clipEnd(c));
   const delta = newEnd - oldEnd;
   const rippled = rippleTrack(next, clip.track_id, oldEnd, delta, clip.id);
 
-  const inverse: Operation[] = [
-    buildOp(
-      { type: "set_speed", target: { clip_id: clip.id }, params: { speed: oldSpeed, preserve_pitch: true }, rationale: `restore speed of ${clip.id}` },
-      ctx,
-    ),
-  ];
+  // Inverse: restore pre-images of every clip on the track. The speed change
+  // ripples downstream clips, so restoring only this clip would leave them
+  // shifted; pre-image restoration of the whole track is byte-exact.
+  const inverse: Operation[] = [];
+  for (const id of realTrackClipIds(t, clip.track_id)) {
+    const c = t.clips[id]!;
+    inverse.push(
+      buildOp(
+        {
+          type: "restore_clip",
+          target: { track_id: clip.track_id },
+          params: {
+            clip: clipPreImage(c),
+            captions: captionsOf(t, c.id).map(captionPreImage),
+            at_s: c.start_s,
+          },
+          rationale: `restore pre-image of ${c.id}`,
+        },
+        ctx,
+      ),
+    );
+  }
 
   return { timeline: rippled, inverse, created: { clip_ids: [], caption_ids: [], effect_ids: [] }, snaps: [] };
 }
@@ -96,21 +132,83 @@ export function applyRestoreClip(t: Timeline, op: Operation & { type: "restore_c
   if (track.locked) throw new OpFailure("OP_INVALID_PARAMS", "track is locked", "target.track_id", op.id);
 
   const clip = op.params.clip;
-  if (t.clips[clip.id]) {
-    throw new OpFailure("OP_CONFLICT", `clip ${clip.id} already exists`, "params.clip.id", op.id);
+  const existing = t.clips[clip.id];
+
+  if (existing) {
+    // REPLACE semantics: the engine emits restore_clip as the exact inverse
+    // of mutating ops (trim/split/set_speed/reorder). The clip persists; its
+    // fields are replaced by the pre-image in place — order untouched, no
+    // ripple, positions taken verbatim from the pre-image (byte-exact).
+    const next = cloneTimeline(t);
+    const replaced = structuredClone(clip) as unknown as Timeline["clips"][string];
+    replaced.track_id = existing.track_id;
+    next.clips[clip.id] = replaced;
+    for (const cap of op.params.captions) {
+      const c = structuredClone(cap) as Timeline["captions"][string];
+      next.captions[c.id] = c;
+    }
+    // Reorder inverses also restore the track order index.
+    const trackRef = next.tracks.find((tr) => tr.id === existing.track_id);
+    if (trackRef && op.params.order_index !== undefined) {
+      const current = trackRef.clip_ids.indexOf(clip.id);
+      if (current !== -1 && current !== op.params.order_index) {
+        trackRef.clip_ids.splice(current, 1);
+        trackRef.clip_ids.splice(
+          Math.min(op.params.order_index, trackRef.clip_ids.length),
+          0,
+          clip.id,
+        );
+      }
+    }
+    const back: Operation[] = [
+      buildOp(
+        {
+          type: "restore_clip",
+          target: { track_id: existing.track_id },
+          params: {
+            clip: clipPreImage(existing),
+            captions: captionsOf(t, existing.id).map(captionPreImage),
+            at_s: existing.start_s,
+            order_index: trackRef?.clip_ids.indexOf(existing.id),
+          },
+          rationale: `restore clip ${existing.id} to its post-op state`,
+        },
+        ctx,
+      ),
+    ];
+    return { timeline: next, inverse: back, created: { clip_ids: [], caption_ids: [], effect_ids: [] }, snaps: [] };
   }
+
   const at = resolveAndSnap(op.id, seconds(op.params.at_s), t, ctx.source, EXACT_POLICY).applied_s;
 
   const restored = structuredClone(clip) as unknown as Timeline["clips"][string];
   restored.track_id = track.id;
-  restored.start_s = at;
+  restored.start_s = q(at);
+  // B-roll pre-images carry the source key in asset_ref; the model keeps it
+  // in segment_id.
+  const assetRef = (clip as { asset_ref?: string }).asset_ref;
+  if (assetRef !== undefined && clip.segment_id === undefined) {
+    restored.segment_id = assetRef;
+  }
   const dur = clipDuration(restored);
 
-  const next = cloneTimeline(t);
-  if (op.params.ripple) rippleTrack(next, track.id, at, dur);
-  const trackRef = next.tracks.find((tr) => tr.id === track.id)!;
-  const insertAt = trackRef.clip_ids.findIndex((id) => (next.clips[id]?.start_s ?? Infinity) > at);
-  trackRef.clip_ids.splice(insertAt < 0 ? trackRef.clip_ids.length : insertAt, 0, restored.id);
+  // rippleTrack returns a new timeline; thread it through.
+  const next = op.params.ripple ? rippleTrack(cloneTimeline(t), track.id, at, dur) : cloneTimeline(t);
+  // The virtual B-roll track derives its order from the clips themselves.
+  const trackRef = next.tracks.find((tr) => tr.id === track.id);
+  if (trackRef) {
+    if (op.params.order_index !== undefined) {
+      // Exact order restoration (delete's inverse).
+      trackRef.clip_ids.splice(
+        Math.min(op.params.order_index, trackRef.clip_ids.length),
+        0,
+        restored.id,
+      );
+    } else {
+      const insertAt = trackRef.clip_ids.findIndex((id) => (next.clips[id]?.start_s ?? Infinity) > at);
+      trackRef.clip_ids.splice(insertAt < 0 ? trackRef.clip_ids.length : insertAt, 0, restored.id);
+    }
+  }
   next.clips[restored.id] = restored;
   for (const cap of op.params.captions) {
     const c = structuredClone(cap) as Timeline["captions"][string];

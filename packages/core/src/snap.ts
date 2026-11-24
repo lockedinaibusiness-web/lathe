@@ -8,7 +8,7 @@
 
 import type { SnapPolicy, TimeSpec } from "@lathe/schemas";
 import { DEFAULT_SNAP_POLICY, type SnapReport, type SnapTargetKind } from "@lathe/schemas";
-import { clipDuration, getClip, type Timeline } from "./timeline.js";
+import { clipDuration, getClip, q, type Timeline } from "./timeline.js";
 
 export interface WordEntry {
   segment_id: string;
@@ -58,7 +58,7 @@ function resolve(spec: TimeSpec, timeline: Timeline, source: SourceIndex): numbe
         throw new SnapError("OP_TARGET_NOT_FOUND", `clip ${spec.clip_id} does not exist`, "target.clip_id");
       }
       const edge = spec.edge === "in" ? clip.start_s : clip.start_s + clipDuration(clip);
-      return edge + spec.offset_s;
+      return q(edge + spec.offset_s);
     }
     case "frame":
       return spec.frame / (spec.fps ?? source.fps ?? 30);
@@ -89,13 +89,14 @@ export function resolveAndSnap(
 
   // Word and clip-edge references are exact by construction.
   if (spec.kind === "word" || spec.kind === "clip") {
+    const exact = q(resolved);
     return {
-      applied_s: resolved,
+      applied_s: exact,
       report: {
         op_id: opId,
         requested: spec,
-        resolved_s: resolved,
-        applied_s: resolved,
+        resolved_s: exact,
+        applied_s: exact,
         snapped_to: "none",
         delta_ms: 0,
         tolerance_ms: policy.tolerance_ms,

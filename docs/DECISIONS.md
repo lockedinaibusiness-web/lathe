@@ -233,3 +233,104 @@ every example input parses against the tool's input schema.
 
 **Consequences.** Tool descriptions/examples are test-enforced; the MCP server
 (M6) registers handlers against this registry with zero re-declaration.
+
+---
+
+## ADR-0012: Engine inverse operations complete the operation vocabulary
+
+Date: 2026-11-22 · Status: accepted
+
+**Context.** Invariant #2 requires every operation to be invertible, and M1's
+acceptance property test must prove apply-then-inverse returns a
+byte-identical timeline. The 16 public operations invert to public operations
+in most cases (trim back with ripple, delete the split's new clip, restyle
+with prior values), but structural restores have no public expression:
+re-inserting a deleted clip with its exact pre-image and captions, removing a
+caption, removing an overlay. A `none` transition kind is also needed to
+express "no transition" on restore. The master prompt explicitly allows
+refining the operation shapes ("You will write the complete schemas. Start
+from these shapes and refine them.").
+
+**Decision.** Extend the operation union with three engine-level operations —
+`restore_clip` (re-inserts a captured clip/caption pre-image at a recorded
+position, optionally rippling), `remove_caption`, `remove_overlay` — plus a
+`none` value in the transition kind enum. The core engine computes and emits
+these as the `inverse` of delete/add operations; they are fully validated
+public operations, and the review UI shows them as labeled undo groups.
+
+**Consequences.** Inverses are first-class operations, so undo is "apply the
+stored inverse batch" and redo is "re-apply the original batch" — both go
+through the same validation and history paths as model-issued edits. Three
+extra operation types exist in the contract; models can technically issue
+them (harmless — restore of a non-existent clip fails with OP_CONFLICT).
+
+---
+
+## ADR-0013: Inverses must restore exactly, so state is null-based and snapping is exact for engine ops
+
+Date: 2026-11-22 · Status: accepted
+
+**Context.** With structural inverses (ADR-0012), "byte-identical" means
+optional state must be restorable exactly: `undefined` (absent) cannot be
+expressed by a public op that always writes a value, and raw-timecode
+snapping (ADR default policy) could MOVE a restored position (mid-word
+avoidance, silence preference, frame grid), silently breaking round trips.
+
+**Decision.** Two rules in the timeline model:
+1. **Null-based state.** Clip `reframe`, `zoom`, `transition`, `audio` and
+   track/project `audio` are `T | null` — explicitly null when unset — so
+   inverses write exact values. Audio gain is always present (default 0 dB).
+2. **Exact snap policy for inverses.** The engine resolves inverse time
+   references with `EXACT_POLICY` (`avoid_mid_word:false`, `prefer_silence:false`,
+   huge tolerance). In `resolveAndSnap`, an exact policy skips word/silence/
+   frame snapping entirely and returns the recorded value. Time references
+   inside inverses are also expressed as clip-edge references where possible
+   (`kind: "clip"` resolves exactly by construction).
+
+**Consequences.** Property tests can prove byte-identical round trips for all
+19 operations. Public ops keep the normal snap policy; only engine-emitted
+inverses use the exact policy. Ops that need to express "unset" carry small
+additive flags: `reframe.reset`, `zoom.reset`, `duck_audio.clear`,
+`normalize_audio.clear`, and `style_caption` takes nullable `style_id`/
+`overrides` (explicit null clears).
+
+---
+
+## ADR-0014: Engine inverses restore full pre-images; time values are quantized to microseconds
+
+Date: 2026-11-24 · Status: accepted
+
+**Context.** During M1, positional inverses (trim-back with ripple, reorder
+with re-pack, set_speed with ripple) failed the property test: converting
+timeline positions back to source positions through an irrational speed
+(e.g. 1.253811) accumulates float error (`8` restored as `7.999999999999999`),
+and re-packing a track whose membership changed repositions clips that were
+not part of the op. Snap-time checks also rejected legitimate extensions
+because the engine compared against the clip's trimmed range instead of the
+source duration.
+
+**Decision.** Four changes in `packages/core`:
+1. **Pre-image inverses.** The inverse of every mutating operation
+   (trim/split/set_speed/reorder) is a batch of `restore_clip` ops carrying
+   the exact pre-images of all affected clips; `restore_clip` REPLACES an
+   existing clip in place (order untouched, no ripple) or re-inserts a
+   deleted clip at its recorded position and `order_index`. No arithmetic,
+   no drift — state is restored verbatim.
+2. **Microsecond quantization.** Every time value written by the engine
+   (`q()` in timeline.ts) rounds to 1e-6 s with SYMMETRIC rounding, so
+   forward and inverse arithmetic cancel exactly. Ripple comparisons use a
+   1 µs epsilon.
+3. **Source-media bounds.** Trim validation compares against
+   `ctx.source.duration_s`, not the clip's current trimmed range (a trimmed
+   clip can be extended back into media it still has).
+4. **Virtual B-roll track.** B-roll clips (`is_broll`) project onto a derived
+   track (`trk_BROLLVIRTUAL00001`) that is never stored in `timeline.tracks`,
+   so insert/delete never mutate the stored track set and the model stays
+   canonical.
+
+**Consequences.** Invariant #2 holds for all 19 operations under
+property-based testing (250 random timelines × random op streams, 4
+properties, run repeatedly). Undo is "apply the stored inverse batch" — the
+same validation and history path as model edits. Pre-image inverses are
+self-describing for the review UI. Cost: inverses of track-wide ops emit one
+restore per clip (bounded by track length; batches cap at 500 ops).

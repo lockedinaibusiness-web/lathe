@@ -110,6 +110,11 @@ export function snapTime(
   }
 }
 
+/** Clip IDs on a REAL track (virtual B-roll has no stored track). */
+export function realTrackClipIds(t: Timeline, trackId: string): string[] {
+  return t.tracks.find((tr) => tr.id === trackId)?.clip_ids ?? [];
+}
+
 /** The policy inverses use: no snapping, exact restoration (ADR-0013). */
 export const EXACT_POLICY: SnapPolicy = {
   avoid_mid_word: false,
@@ -129,9 +134,16 @@ export function clipEndOf(clip: Clip): number {
 
 export { captionsOf };
 
-/** Shape of a clip as stored in a restore_clip pre-image. */
+/** Shape of a clip as stored in a restore_clip pre-image. B-roll clips carry
+ * their source key in asset_ref (not segment_id) so the pre-image validates
+ * against the operations contract. */
 export function clipPreImage(clip: Clip): Record<string, unknown> {
-  return JSON.parse(JSON.stringify(clip)) as Record<string, unknown>;
+  const json = JSON.parse(JSON.stringify(clip)) as Record<string, unknown>;
+  if (clip.is_broll) {
+    json.asset_ref = clip.segment_id;
+    delete json.segment_id;
+  }
+  return json;
 }
 
 export function captionPreImage(cap: Caption): Record<string, unknown> {

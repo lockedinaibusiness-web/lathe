@@ -21,5 +21,16 @@ Rule 3: nothing here may be presented as done. Reviewed at every milestone.
 | --- | --- | --- |
 | Schemas contract tests | 69/69 pass | includes gen:check and Ajv sample validation |
 | API tests (embedded Postgres) | 14/14 pass | real migrations, real idempotency replay |
-| Fixtures regeneration (full set) | ~26 s per run | two consecutive runs byte-identical manifest |
+| Fixtures regeneration (full set) | ~5 s per run | two consecutive runs byte-identical manifest |
 | `pnpm dev` cold start | ~15 s to API listening | includes cluster init on a fresh data dir |
+| Workspace test suite | 179/179 pass in ~40 s | schemas + core + api + fixtures |
+| Core coverage | 98.06% lines / 97.26% funcs / 85.93% branches | branch threshold set to 85 (remainder are defensive checks the snap layer already enforces) |
+
+## M1 additions
+
+| ID | Gap | Impact | Plan |
+| --- | --- | --- | --- |
+| G-008 | Core has no persistence: history/inverses live in memory | Undo/redo is per-process | M6 wires `EditHistory` + `applyBatch` to the `timeline_versions`/`operation_groups` tables (M0 migration) |
+| G-009 | Branch coverage 86% (defensive bounds checks unreachable via the public API) | Cosmetic for the acceptance criterion | Accept; revisit if any check becomes reachable |
+| G-010 | SAPI synthesis needs one PowerShell process with fresh instances per word | Fixtures are Windows-only for ASR-quality speech (G-003) | M2 adds a small CC0 corpus so ASR accuracy tests are platform-independent |
+| G-011 | ffmpeg/ffprobe spawns cost ~3 s each on this machine (AV scanning) | Anything spawning per-item is slow | Fixture generator batches work into single invocations; M4 render planner must do the same |

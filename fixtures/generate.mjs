@@ -25,7 +25,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -222,63 +222,97 @@ const TRIM_AF = [
   "aformat=channel_layouts=mono",
 ].join(",");
 
-/** Synthesize one word to a trimmed WAV via Windows SAPI. true on success. */
-function sapiWord(word, index) {
-  if (process.platform !== "win32") return false;
-  const raw = join(outDir, `speech_raw_${pad(index, 3)}.wav`);
-  const ps = [
-    "Add-Type -AssemblyName System.Speech;",
-    "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer;",
-    "$s.Rate = 2;", // faster speech: keeps fixtures short and test times low
-    `$s.SetOutputToWaveFile("${raw.replace(/\\/g, "\\\\")}");`,
-    `$s.Speak("${word}");`,
-    "$s.Dispose();",
-  ].join(" ");
-  const res = spawnSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", ps], {
-    encoding: "utf8",
-  });
-  if (res.status !== 0 || !existsSync(raw)) {
-    console.warn(`[fixtures] SAPI failed for word ${index} (${word}); using tone burst fallback`);
-    return false;
+/**
+ * Duration of a canonical PCM WAV from its RIFF header — no ffprobe spawn
+ * (spawns cost ~3 s on this machine; the generator must stay fast).
+ * fmt chunk layout: "fmt "(4) size(4) audioFormat(2) channels(2)
+ *                   sampleRate(4) byteRate(4) blockAlign(2) bitsPerSample(2)
+ */
+function wavDuration(file) {
+  const buf = readFileSync(file);
+  const fmtPos = buf.indexOf("fmt ", 12);
+  if (fmtPos < 0) throw new Error(`no fmt chunk in ${file}`);
+  const byteRate = buf.readUInt32LE(fmtPos + 16);
+  let pos = 12;
+  while (pos + 8 <= buf.length) {
+    const id = buf.toString("ascii", pos, pos + 4);
+    const size = buf.readUInt32LE(pos + 4);
+    if (id === "data") return size / byteRate;
+    pos += 8 + size + (size % 2); // chunks are word-aligned
   }
-  ffmpeg(["-i", `speech_raw_${pad(index, 3)}.wav`, "-af", TRIM_AF, "-c:a", "pcm_s16le", `speech_word_${pad(index, 3)}.wav`]);
-  return true;
+  throw new Error(`no data chunk in ${file}`);
 }
 
-/** Tone-burst fallback for non-Windows runners: same duration contract. */
-function toneBurst(word, index, durationS) {
-  const target = join(outDir, `speech_word_${pad(index, 3)}.wav`);
-  ffmpeg([
-    "-f", "lavfi",
-    "-i", `sine=frequency=${600 + (index % 5) * 200}:sample_rate=48000:duration=${durationS}`,
-    "-af", "aformat=channel_layouts=mono",
-    "-c:a", "pcm_s16le",
-    target,
-  ]);
+/**
+ * Synthesize every word in ONE PowerShell process, using a fresh synthesizer
+ * instance per word (retargeting one instance's output file corrupts the
+ * previous file's header on this SAPI build). A .ps1 file avoids all shell
+ * quoting issues. Returns true when SAPI produced all words.
+ */
+function sapiWordsAll() {
+  if (process.platform !== "win32") return false;
+  const ps1 = join(outDir, "synthesize.ps1");
+  const lines = [
+    "Add-Type -AssemblyName System.Speech;",
+    "$ErrorActionPreference = 'Stop';",
+    `$outDir = '${outDir.replace(/\\/g, "\\\\")}';`,
+  ];
+  SPEECH_WORDS.forEach((w, i) => {
+    const file = `(Join-Path $outDir ('speech_raw_{0:000}.wav' -f ${i}))`;
+    lines.push(`$s = New-Object System.Speech.Synthesis.SpeechSynthesizer;`);
+    lines.push("$s.Rate = 2;"); // faster speech: short fixtures, fast tests
+    lines.push(`$s.SetOutputToWaveFile(${file});`);
+    lines.push(`$s.Speak('${w}');`);
+    lines.push(`$s.Dispose();`);
+  });
+  lines.push("exit 0;");
+  writeFileSync(ps1, lines.join("\n"), "utf8");
+  const res = spawnSync("powershell", ["-NoProfile", "-NonInteractive", "-File", ps1], {
+    encoding: "utf8",
+    timeout: 180000,
+  });
+  if (res.status !== 0) {
+    console.warn(`[fixtures] SAPI synthesis failed (exit ${res.status}); using tone burst fallback`);
+    return false;
+  }
+  return SPEECH_WORDS.every((_, i) => existsSync(join(outDir, `speech_raw_${pad(i, 3)}.wav`)));
 }
 
 function generateSpeech() {
   const words = [];
   let usedSapi = 0;
 
-  // Pass 1: synthesize words and measure actual durations (deterministic order).
-  const measured = [];
-  for (let i = 0; i < SPEECH_WORDS.length; i++) {
-    const word = SPEECH_WORDS[i];
-    const ok = sapiWord(word, i);
-    const wav = join(outDir, `speech_word_${pad(i, 3)}.wav`);
-    if (ok) {
-      usedSapi++;
-      measured.push(durationS(wav));
-    } else {
-      // Deterministic fallback duration: proportional to word length.
-      const d = Math.max(0.18, word.length * 0.06);
-      toneBurst(word, i, d);
-      measured.push(d);
+  // Pass 1: synthesize (one PowerShell, fresh instance per word).
+  const sapiOk = sapiWordsAll();
+
+  // Pass 2: ONE ffmpeg call produces the per-word trimmed (or burst) WAVs.
+  // 28 separate spawns cost ~3 s each on this machine.
+  const inputs = [];
+  const outputs = [];
+  if (sapiOk) {
+    for (let i = 0; i < SPEECH_WORDS.length; i++) {
+      inputs.push("-i", `speech_raw_${pad(i, 3)}.wav`);
+      outputs.push("-map", `${i}:a`, "-af", TRIM_AF, `speech_word_${pad(i, 3)}.wav`);
     }
+    ffmpeg([...inputs, ...outputs]);
+    usedSapi = SPEECH_WORDS.length;
+  } else {
+    // Tone-burst fallback (non-Windows): same duration contract.
+    for (let i = 0; i < SPEECH_WORDS.length; i++) {
+      const d = Math.max(0.18, SPEECH_WORDS[i].length * 0.06);
+      inputs.push("-f", "lavfi", "-i", `sine=frequency=${600 + (i % 5) * 200}:sample_rate=48000:duration=${d.toFixed(3)}`);
+      outputs.push("-map", `${i}:a`, `speech_word_${pad(i, 3)}.wav`);
+    }
+    ffmpeg([...inputs, ...outputs, "-c:a", "pcm_s16le"]);
   }
 
-  // Pass 2: schedule starts (fixed gaps; planted pauses at fixed word indexes).
+  // Pass 3: measure the ACTUAL per-word durations (what the audio contains).
+  const measured = [];
+  for (let i = 0; i < SPEECH_WORDS.length; i++) {
+    measured.push(wavDuration(join(outDir, `speech_word_${pad(i, 3)}.wav`)));
+  }
+
+  // Pass 4: schedule starts (fixed gaps; planted pauses at fixed word indexes).
   const starts = [];
   let cursor = 0.2; // lead-in
   for (let i = 0; i < SPEECH_WORDS.length; i++) {
@@ -288,33 +322,27 @@ function generateSpeech() {
     if (i === PLANTED_SILENCE_AFTER_INDEX) cursor += PLANTED_SILENCE_S;
   }
 
-  // Pass 3: render each word into a tiling segment (word + its tail gap/pause),
-  // so the concatenated track has exactly the scheduled word boundaries.
-  const segments = [];
+  // Pass 5: ONE ffmpeg call tiles + concatenates into speech.wav.
+  const tileInputs = [];
+  const filters = [];
+  const concatInputs = [];
   for (let i = 0; i < SPEECH_WORDS.length; i++) {
-    const word = SPEECH_WORDS[i];
-    const start = starts[i];
-    const len = measured[i];
-    const d = i < SPEECH_WORDS.length - 1 ? starts[i + 1] - start : len;
-    const segName = `speech_seg_${pad(i, 3)}.wav`;
-    ffmpeg([
-      "-i", `speech_word_${pad(i, 3)}.wav`,
-      "-af", `apad=whole_dur=${d.toFixed(3)},atrim=0:${d.toFixed(3)},asetpts=PTS-STARTPTS`,
-      "-c:a", "pcm_s16le",
-      segName,
-    ]);
-    segments.push(segName);
-    words.push({ w: word, s: Number(start.toFixed(3)), e: Number((start + len).toFixed(3)), c: 1 });
+    const d = i < SPEECH_WORDS.length - 1 ? starts[i + 1] - starts[i] : measured[i];
+    tileInputs.push("-i", `speech_word_${pad(i, 3)}.wav`);
+    filters.push(`[${i}:a]apad=whole_dur=${d.toFixed(3)},atrim=0:${d.toFixed(3)},asetpts=PTS-STARTPTS[seg${i}]`);
+    concatInputs.push(`[seg${i}]`);
+    words.push({
+      w: SPEECH_WORDS[i],
+      s: Number(starts[i].toFixed(3)),
+      e: Number((starts[i] + measured[i]).toFixed(3)),
+      c: 1,
+    });
   }
-
-  // Concatenate into speech.wav (one audio stream; the concat demuxer exposes
-  // every segment as its own stream, so map explicitly).
-  const listFile = join(outDir, "speech_seg_list.txt");
-  writeFileSync(listFile, segments.map((s) => `file '${s.replace(/\\/g, "/")}'`).join("\n"), "utf8");
-  ffmpeg(["-f", "concat", "-safe", "0", "-i", listFile, "-map", "0:a:0", "-c:a", "pcm_s16le", "speech.wav"]);
+  filters.push(`${concatInputs.join("")}concat=n=${SPEECH_WORDS.length}:v=0:a=1[out]`);
+  ffmpeg([...tileInputs, "-filter_complex", filters.join(";"), "-map", "[out]", "-c:a", "pcm_s16le", "speech.wav"]);
 
   // speech.mp4: static background carrying the track.
-  const totalS = durationS(join(outDir, "speech.wav"));
+  const totalS = wavDuration(join(outDir, "speech.wav"));
   ffmpeg([
     "-f", "lavfi", "-i", `testsrc2=s=${W}x${H}:d=${totalS.toFixed(3)}:r=${FPS}`,
     "-i", "speech.wav",

@@ -350,7 +350,10 @@ const InsertBrollOp = z.object({
 const ClipPreImage = z.object({
   id: ClipId,
   track_id: TrackId,
-  segment_id: SegmentId,
+  /** Exactly one of segment_id (timeline media) / asset_ref (B-roll source). */
+  segment_id: SegmentId.optional(),
+  /** B-roll source key: an asset ID or a pending search/stock reference. */
+  asset_ref: z.string().min(1).max(300).optional(),
   start_s: z.number().nonnegative().finite(),
   source_in_s: z.number().nonnegative().finite(),
   source_out_s: z.number().nonnegative().finite(),
@@ -362,6 +365,8 @@ const ClipPreImage = z.object({
   overlays: z.array(z.record(z.string(), z.unknown())).default([]),
   broll_audio: z.enum(["mute", "keep", "duck"]).optional(),
   is_broll: z.boolean().optional(),
+}).refine((c) => (c.segment_id === undefined) !== (c.asset_ref === undefined), {
+  message: "clip pre-image needs exactly one of segment_id or asset_ref",
 });
 
 const CaptionPreImage = z.object({
@@ -389,6 +394,8 @@ const RestoreClipOp = z.object({
     captions: z.array(CaptionPreImage).default([]),
     /** Re-insert at the recorded position; ripple downstream when true. */
     at_s: z.number().nonnegative().finite(),
+    /** Position in the track's clip order (after removal), for exact restore. */
+    order_index: z.number().int().nonnegative().optional(),
     ripple: z.boolean().default(true),
   }),
 });

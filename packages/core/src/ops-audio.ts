@@ -62,6 +62,17 @@ function writeAudio(t: Timeline, scope: AudioScope, audio: ClipAudio | null): Ti
 
 const EMPTY_AUDIO: ClipAudio = { gain_db: 0 };
 
+/**
+ * Audio state is `null` when the clip/track/project has no audio settings at
+ * all. After clearing a duck/normalize component, a unity-gain object is
+ * semantically identical to null — write null so inverses restore the
+ * pre-image byte-for-byte (ADR-0013).
+ */
+function compactAudio(a: ClipAudio): ClipAudio | null {
+  const isUnity = (a.gain_db ?? 0) === 0 && a.duck === undefined && a.normalize === undefined;
+  return isUnity ? null : a;
+}
+
 export function applySetGain(t: Timeline, op: Operation & { type: "set_gain" }, ctx: ApplyContext): OpResult {
   const scope = audioScope(op, t);
   // Validate targets exist (clear errors instead of silent no-ops).
@@ -69,7 +80,7 @@ export function applySetGain(t: Timeline, op: Operation & { type: "set_gain" }, 
   if (scope.kind === "track") needTrack(t, scope.track_id, op.id);
 
   const prior = readAudio(t, scope);
-  const next = writeAudio(t, scope, { ...(prior ?? EMPTY_AUDIO), gain_db: op.params.gain_db });
+  const next = writeAudio(t, scope, compactAudio({ ...(prior ?? EMPTY_AUDIO), gain_db: op.params.gain_db }));
 
   const inverse: Operation[] = [
     buildOp(
@@ -115,7 +126,7 @@ export function applyDuckAudio(t: Timeline, op: Operation & { type: "duck_audio"
           ...(range ? { range } : {}),
         },
       };
-  const next = writeAudio(t, scope, nextAudio);
+  const next = writeAudio(t, scope, compactAudio(nextAudio));
 
   const inverse: Operation[] = [
     buildOp(
@@ -159,7 +170,7 @@ export function applyNormalizeAudio(t: Timeline, op: Operation & { type: "normal
         ...base,
         normalize: { target_lufs: op.params.target_lufs, true_peak_dbtp: op.params.true_peak_dbtp },
       };
-  const next = writeAudio(t, scope, nextAudio);
+  const next = writeAudio(t, scope, compactAudio(nextAudio));
 
   const inverse: Operation[] = [
     buildOp(

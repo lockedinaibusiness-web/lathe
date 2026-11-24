@@ -4,7 +4,7 @@
  */
 
 import type { Operation, SnapReport } from "@lathe/schemas";
-import { type Timeline, cloneTimeline, type Overlay } from "./timeline.js";
+import { type Timeline, cloneTimeline, q, type Overlay } from "./timeline.js";
 import { type ApplyContext, type OpResult, OpFailure, buildOp, needClip, snapTime, mintId } from "./ops-helpers.js";
 
 export function applyAddOverlay(t: Timeline, op: Operation & { type: "add_overlay" }, ctx: ApplyContext): OpResult {
@@ -31,8 +31,8 @@ export function applyAddOverlay(t: Timeline, op: Operation & { type: "add_overla
     kind: op.params.kind,
     ...(op.params.asset_id ? { asset_id: op.params.asset_id } : {}),
     ...(op.params.text ? { text: op.params.text } : {}),
-    from_s: fromRes.applied_s,
-    to_s: toRes.applied_s,
+    from_s: q(fromRes.applied_s),
+    to_s: q(toRes.applied_s),
     ...(op.params.position ? { position: op.params.position } : {}),
     ...(op.params.scale !== undefined ? { scale: op.params.scale } : {}),
     opacity: op.params.opacity,

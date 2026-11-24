@@ -2921,6 +2921,11 @@
                       "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
                       "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
                     },
+                    "asset_ref": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
                     "start_s": {
                       "type": "number",
                       "minimum": 0
@@ -3020,7 +3025,6 @@
                   "required": [
                     "id",
                     "track_id",
-                    "segment_id",
                     "start_s",
                     "source_in_s",
                     "source_out_s",
@@ -3099,6 +3103,11 @@
                 "at_s": {
                   "type": "number",
                   "minimum": 0
+                },
+                "order_index": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
                 },
                 "ripple": {
                   "default": true,
@@ -6172,6 +6181,11 @@
                             "pattern": "^[a-z]{2,3}_[A-Za-z0-9]{10,64}$",
                             "description": "seg-prefixed stable ID, e.g. \"seg_01J8ZQ4K2M9T3X7YB6N0PWABCD\""
                           },
+                          "asset_ref": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 300
+                          },
                           "start_s": {
                             "type": "number",
                             "minimum": 0
@@ -6271,7 +6285,6 @@
                         "required": [
                           "id",
                           "track_id",
-                          "segment_id",
                           "start_s",
                           "source_in_s",
                           "source_out_s",
@@ -6350,6 +6363,11 @@
                       "at_s": {
                         "type": "number",
                         "minimum": 0
+                      },
+                      "order_index": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
                       },
                       "ripple": {
                         "default": true,

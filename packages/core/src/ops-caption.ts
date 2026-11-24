@@ -7,7 +7,7 @@
  */
 
 import type { Operation, SnapReport } from "@lathe/schemas";
-import { type Timeline, clipDuration, cloneTimeline, captionTrack } from "./timeline.js";
+import { type Timeline, clipDuration, cloneTimeline, captionTrack, q } from "./timeline.js";
 import { type ApplyContext, type OpResult, OpFailure, buildOp, needCaption, needClip, snapTime, mintId } from "./ops-helpers.js";
 
 export function applyAddCaption(t: Timeline, op: Operation & { type: "add_caption" }, ctx: ApplyContext): OpResult {
@@ -47,8 +47,8 @@ export function applyAddCaption(t: Timeline, op: Operation & { type: "add_captio
     id: captionId,
     track_id: trackRef.id,
     clip_id: clip.id,
-    start_s: from,
-    end_s: to,
+    start_s: q(from),
+    end_s: q(to),
     text: op.params.text,
     ...(op.params.style_id ? { style_id: op.params.style_id } : {}),
     ...(op.params.speaker ? { speaker: op.params.speaker } : {}),

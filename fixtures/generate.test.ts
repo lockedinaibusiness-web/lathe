@@ -1,17 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFile, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, "..");
 const outDir = join(repo, "fixtures/out");
 const genScript = join(repo, "fixtures/generate.mjs");
 
-function generate(): void {
-  execFileSync(process.execPath, [genScript, "all"], { cwd: repo, encoding: "utf8", stdio: "pipe" });
+// Async generation: the generator runs as a child process, and awaiting it
+// (instead of execFileSync) keeps the vitest worker's RPC heartbeat alive
+// during the ~25 s regenerations.
+function generate(): Promise<void> {
+  return execFileAsync(process.execPath, [genScript, "all"], { cwd: repo, encoding: "utf8" }).then(() => undefined);
 }
 
 /** Machine-independent summary of a media file (not the encoded bytes). */
@@ -41,8 +47,8 @@ function streamSummary(path: string): unknown {
 }
 
 describe("fixture generator (M0)", () => {
-  it("generates the deterministic fixture set with a manifest", () => {
-    generate();
+  it("generates the deterministic fixture set with a manifest", async () => {
+    await generate();
     const manifest = JSON.parse(readFileSync(join(outDir, "manifest.json"), "utf8"));
     expect(manifest.version).toBe("1.0.0");
     expect(manifest.fps).toBe(30);
@@ -73,14 +79,14 @@ describe("fixture generator (M0)", () => {
     }
   });
 
-  it("regenerates deterministically: identical manifest and stream summaries", () => {
+  it("regenerates deterministically: identical manifest and stream summaries", async () => {
     const firstManifest = readFileSync(join(outDir, "manifest.json"), "utf8");
     const firstSummaries = ["pattern.mp4", "tone.mp4", "scenes.mp4", "speech.wav", "speech.mp4"].map((f) =>
       streamSummary(join(outDir, f)),
     );
     // A second run must reproduce the manifest exactly and the same
     // machine-independent stream summaries.
-    generate();
+    await generate();
     expect(readFileSync(join(outDir, "manifest.json"), "utf8")).toBe(firstManifest);
     const secondSummaries = ["pattern.mp4", "tone.mp4", "scenes.mp4", "speech.wav", "speech.mp4"].map((f) =>
       streamSummary(join(outDir, f)),

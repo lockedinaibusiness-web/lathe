@@ -5,7 +5,7 @@
  */
 
 import type { Operation, SnapReport } from "@lathe/schemas";
-import { type Timeline, cloneTimeline, type Clip } from "./timeline.js";
+import { type Timeline, cloneTimeline, q, brollTrack, type Clip } from "./timeline.js";
 import { type ApplyContext, type OpResult, buildOp, mintId, snapTime } from "./ops-helpers.js";
 
 export function applyInsertBroll(t: Timeline, op: Operation & { type: "insert_broll" }, ctx: ApplyContext): OpResult {
@@ -29,27 +29,16 @@ export function applyInsertBroll(t: Timeline, op: Operation & { type: "insert_br
   }
 
   const next = cloneTimeline(t);
-  let track = next.tracks.find((tr) => tr.name === "B-roll" && tr.kind === "video");
-  if (!track) {
-    const trackId = mintId(ctx, "trk");
-    next.tracks.push({
-      id: trackId,
-      kind: "video",
-      name: "B-roll",
-      position: next.tracks.length,
-      audio: null,
-      clip_ids: [],
-    });
-    track = next.tracks.find((tr) => tr.id === trackId)!;
-  }
-  const trackRef = next.tracks.find((tr) => tr.id === track!.id)!;
+  // The B-roll track is virtual (derived from is_broll clips): nothing is
+  // added to stored tracks, which keeps insert/delete exactly invertible.
+  const trackRef = brollTrack(next);
 
   const clipId = mintId(ctx, "clp");
   const clip: Clip = {
     id: clipId,
     track_id: trackRef.id,
     segment_id: segmentRef,
-    start_s: atRes.applied_s,
+    start_s: q(atRes.applied_s),
     source_in_s: sourceIn,
     source_out_s: sourceOut,
     speed: 1,
